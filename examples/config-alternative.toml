@@ -1,0 +1,30 @@
+# Alternative clazyfiler configuration
+# Example showing different key mappings and settings
+
+[keymaps]
+# Arrow keys and common shortcuts
+quit = "q"
+up = "ArrowUp"      # Use arrow keys instead of vim keys
+down = "ArrowDown"
+left = "ArrowLeft"
+right = "ArrowRight"
+select = "Enter"
+back = "Backspace"  # Use backspace to go back
+refresh = "F5"      # F5 to refresh
+
+[ui]
+# Minimal UI settings
+panel_width_ratio = 70      # Wider panels
+show_borders = false        # Clean look without borders
+show_hidden_files = true    # Show all files including hidden
+file_list_margin = 0        # No margin for more space
+
+[external_commands]
+# Different external tools
+fuzzy_finder = "sk"         # Use skim instead of fzf
+editor = "nvim"             # Neovim as editor
+file_manager = "thunar"     # Thunar file manager
+
+[general]
+# Start in home directory
+default_directory = "~"

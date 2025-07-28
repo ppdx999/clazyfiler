@@ -1,0 +1,30 @@
+# clazyfiler configuration file
+# Place this file at ~/.config/clazyfiler/config.toml
+
+[keymaps]
+# Key bindings for various actions
+quit = "q"          # Quit the application
+up = "k"            # Move selection up
+down = "j"          # Move selection down
+left = "h"          # Move to parent directory
+right = "l"         # Enter selected directory
+select = "Enter"    # Select/open file or directory
+back = "Escape"     # Go back to parent directory
+refresh = "r"       # Refresh file list
+
+[ui]
+# User interface settings
+panel_width_ratio = 50      # Width ratio of panels (percentage)
+show_borders = true         # Show borders around panels
+show_hidden_files = false   # Display hidden files (starting with .)
+file_list_margin = 1        # Margin around file list
+
+[external_commands]
+# External command integration
+fuzzy_finder = "fzf"        # Fuzzy finder command
+editor = "$EDITOR"          # Text editor (uses $EDITOR env var)
+file_manager = "xdg-open"   # File manager for opening files
+
+[general]
+# General application settings
+default_directory = "~"     # Default starting directory

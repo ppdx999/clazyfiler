@@ -1,3 +1,6 @@
+mod config;
+
+use config::Config;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -20,14 +23,17 @@ use std::{
 struct App {
     current_dir: PathBuf,
     files: Vec<String>,
+    config: Config,
 }
 
 impl App {
-    fn new() -> io::Result<App> {
+    fn new() -> Result<App, Box<dyn std::error::Error>> {
         let current_dir = env::current_dir()?;
+        let config = Config::load()?;
         let mut app = App {
             current_dir: current_dir.clone(),
             files: Vec::new(),
+            config,
         };
         app.load_files()?;
         Ok(app)
@@ -55,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new()?;
+    let app = App::new().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
     let result = run_app(&mut terminal, app);
 
     disable_raw_mode()?;
@@ -79,7 +85,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: App) -> io::Result<()> {
 
         if let Event::Key(key) = event::read()? {
             match key.code {
-                KeyCode::Char('q') => return Ok(()),
+                KeyCode::Char(c) => {
+                    if app.config.key_matches(c, "quit") {
+                        return Ok(());
+                    }
+                }
                 _ => {}
             }
         }
