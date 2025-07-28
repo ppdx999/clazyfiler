@@ -1,3 +1,5 @@
+[This project is under progress]
+
 # clazyfiler
 
-Fully Customizable Filer written in Rust
+Fully Customizable TUI Filer written in Rust
