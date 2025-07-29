@@ -244,6 +244,27 @@ impl App {
     fn get_selected_file(&self) -> Option<&FileEntry> {
         self.files.get(self.selected_index)
     }
+
+    fn enter_directory(&mut self) -> Result<(), String> {
+        if let Some(selected_file) = self.get_selected_file() {
+            if selected_file.is_dir {
+                match env::set_current_dir(&selected_file.path) {
+                    Ok(()) => {
+                        self.current_dir = selected_file.path.clone();
+                        match self.load_files() {
+                            Ok(()) => Ok(()),
+                            Err(e) => Err(format!("Failed to load directory contents: {}", e)),
+                        }
+                    }
+                    Err(e) => Err(format!("Failed to enter directory: {}", e)),
+                }
+            } else {
+                Err("Selected item is not a directory".to_string())
+            }
+        } else {
+            Err("No file selected".to_string())
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -284,10 +305,21 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                         app.move_selection(-1);
                     } else if app.config.key_matches(c, "down") {
                         app.move_selection(1);
+                    } else if app.config.key_matches(c, "right") {
+                        if let Err(e) = app.enter_directory() {
+                            // For now, we'll silently ignore errors
+                            // In the future, we could show error messages in the UI
+                            eprintln!("Directory navigation error: {}", e);
+                        }
                     }
                 }
                 KeyCode::Up => app.move_selection(-1),
                 KeyCode::Down => app.move_selection(1),
+                KeyCode::Right | KeyCode::Enter => {
+                    if let Err(e) = app.enter_directory() {
+                        eprintln!("Directory navigation error: {}", e);
+                    }
+                }
                 _ => {}
             }
         }
