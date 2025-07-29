@@ -47,6 +47,7 @@ impl Default for Config {
         keymaps.insert("Escape".to_string(), "back".to_string());
         keymaps.insert("r".to_string(), "refresh".to_string());
         keymaps.insert("F5".to_string(), "refresh".to_string());
+        keymaps.insert("/".to_string(), "search".to_string());
 
         Config {
             keymaps,
