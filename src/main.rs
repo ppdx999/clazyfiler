@@ -24,10 +24,11 @@ use std::{
 // FLUX ARCHITECTURE IMPLEMENTATION
 
 // Actions (Flux Pattern)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Action {
     MoveSelection(isize),
     EnterDirectory,
+    Back,
     LoadDirectory(PathBuf),
     Refresh,
     Quit,
@@ -86,6 +87,9 @@ impl Dispatcher {
             }
             Action::EnterDirectory => {
                 self.store.enter_directory()
+            }
+            Action::Back => {
+                self.store.go_back()
             }
             Action::LoadDirectory(path) => {
                 match env::set_current_dir(&path) {
@@ -148,6 +152,24 @@ impl Store {
             }
         } else {
             Err("No file selected".to_string())
+        }
+    }
+
+    fn go_back(&mut self) -> Result<(), String> {
+        let current_path = self.state.current_dir.clone();
+        if let Some(parent) = current_path.parent() {
+            match env::set_current_dir(parent) {
+                Ok(()) => {
+                    self.state.current_dir = parent.to_path_buf();
+                    match self.load_files() {
+                        Ok(()) => Ok(()),
+                        Err(e) => Err(format!("Failed to load parent directory: {}", e)),
+                    }
+                }
+                Err(e) => Err(format!("Failed to go back: {}", e)),
+            }
+        } else {
+            Err("Already at the root directory".to_string())
         }
     }
 
@@ -329,28 +351,29 @@ impl Store {
 
 // Action Creator - converts keyboard input to actions
 fn key_to_action(key: KeyCode, config: &Config) -> Option<Action> {
-    match key {
-        KeyCode::Char(c) => {
-            if config.key_matches(c, "quit") {
-                Some(Action::Quit)
-            } else if config.key_matches(c, "up") {
-                Some(Action::MoveSelection(-1))
-            } else if config.key_matches(c, "down") {
-                Some(Action::MoveSelection(1))
-            } else if config.key_matches(c, "right") {
-                Some(Action::EnterDirectory)
-            } else if config.key_matches(c, "refresh") {
-                Some(Action::Refresh)
-            } else {
-                None
-            }
+    let key_str = match key {
+        KeyCode::Char(c) => c.to_string(),
+        KeyCode::Up => "Up".to_string(),
+        KeyCode::Down => "Down".to_string(),
+        KeyCode::Left => "Left".to_string(),
+        KeyCode::Right => "Right".to_string(),
+        KeyCode::Enter => "Enter".to_string(),
+        KeyCode::Esc => "Escape".to_string(),
+        KeyCode::F(5) => "F5".to_string(),
+        _ => return None,
+    };
+
+    config.keymaps.get(&key_str).and_then(|action_str| {
+        match action_str.as_str() {
+            "quit" => Some(Action::Quit),
+            "up" => Some(Action::MoveSelection(-1)),
+            "down" => Some(Action::MoveSelection(1)),
+            "select" => Some(Action::EnterDirectory),
+            "back" => Some(Action::Back),
+            "refresh" => Some(Action::Refresh),
+            _ => None,
         }
-        KeyCode::Up => Some(Action::MoveSelection(-1)),
-        KeyCode::Down => Some(Action::MoveSelection(1)),
-        KeyCode::Right | KeyCode::Enter => Some(Action::EnterDirectory),
-        KeyCode::F(5) => Some(Action::Refresh),
-        _ => None
-    }
+    })
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -383,6 +406,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, dispatcher: &mut Dispatcher) 
         terminal.draw(|f| view(f, dispatcher.get_store()))?;
 
         if let Event::Key(key) = event::read()? {
+            if key.code == KeyCode::Esc {
+                return Ok(())
+            }
             if let Some(action) = key_to_action(key.code, &dispatcher.get_store().config) {
                 match &action {
                     Action::Quit => return Ok(()),

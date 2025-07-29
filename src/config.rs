@@ -1,25 +1,13 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub keymaps: Keymaps,
+    pub keymaps: HashMap<String, String>,
     pub ui: UiConfig,
     pub external_commands: ExternalCommands,
     pub general: GeneralConfig,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Keymaps {
-    pub quit: String,
-    pub up: String,
-    pub down: String,
-    pub left: String,
-    pub right: String,
-    pub select: String,
-    pub back: String,
-    pub refresh: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,26 +32,27 @@ pub struct GeneralConfig {
 
 impl Default for Config {
     fn default() -> Self {
+        let mut keymaps = HashMap::new();
+        // Navigation
+        keymaps.insert("q".to_string(), "quit".to_string());
+        keymaps.insert("k".to_string(), "up".to_string());
+        keymaps.insert("Up".to_string(), "up".to_string());
+        keymaps.insert("j".to_string(), "down".to_string());
+        keymaps.insert("Down".to_string(), "down".to_string());
+        keymaps.insert("h".to_string(), "back".to_string());
+        keymaps.insert("Left".to_string(), "back".to_string());
+        keymaps.insert("l".to_string(), "select".to_string());
+        keymaps.insert("Right".to_string(), "select".to_string());
+        keymaps.insert("Enter".to_string(), "select".to_string());
+        keymaps.insert("Escape".to_string(), "back".to_string());
+        keymaps.insert("r".to_string(), "refresh".to_string());
+        keymaps.insert("F5".to_string(), "refresh".to_string());
+
         Config {
-            keymaps: Keymaps::default(),
+            keymaps,
             ui: UiConfig::default(),
             external_commands: ExternalCommands::default(),
             general: GeneralConfig::default(),
-        }
-    }
-}
-
-impl Default for Keymaps {
-    fn default() -> Self {
-        Keymaps {
-            quit: "q".to_string(),
-            up: "k".to_string(),
-            down: "j".to_string(),
-            left: "h".to_string(),
-            right: "l".to_string(),
-            select: "Enter".to_string(),
-            back: "Escape".to_string(),
-            refresh: "r".to_string(),
         }
     }
 }
@@ -128,25 +117,5 @@ impl Config {
         fs::write(&config_file, content)?;
 
         Ok(())
-    }
-
-    pub fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-        let config_dir = dirs::config_dir()
-            .ok_or("Could not find config directory")?
-            .join("clazyfiler");
-        Ok(config_dir)
-    }
-
-    pub fn key_matches(&self, key_char: char, action: &str) -> bool {
-        let key_str = key_char.to_string();
-        match action {
-            "quit" => self.keymaps.quit == key_str,
-            "up" => self.keymaps.up == key_str,
-            "down" => self.keymaps.down == key_str,
-            "left" => self.keymaps.left == key_str,
-            "right" => self.keymaps.right == key_str,
-            "refresh" => self.keymaps.refresh == key_str,
-            _ => false,
-        }
     }
 }
