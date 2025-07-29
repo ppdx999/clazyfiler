@@ -2,15 +2,28 @@
 # Place this file at ~/.config/clazyfiler/config.toml
 
 [keymaps]
-# Key bindings for various actions
-quit = "q"          # Quit the application
-up = "k"            # Move selection up
-down = "j"          # Move selection down
-left = "h"          # Move to parent directory
-right = "l"         # Enter selected directory
-select = "Enter"    # Select/open file or directory
-back = "Escape"     # Go back to parent directory
-refresh = "r"       # Refresh file list
+# Key bindings for various actions (HashMap-based flexible mapping)
+"q" = "quit"        # Quit the application
+"k" = "up"          # Move selection up (vim-style)
+"Up" = "up"         # Move selection up (arrow key)
+"j" = "down"        # Move selection down (vim-style)
+"Down" = "down"     # Move selection down (arrow key)
+"h" = "back"        # Go to parent directory (vim-style)
+"Left" = "back"     # Go to parent directory (arrow key)
+"l" = "select"      # Enter directory/select file (vim-style)
+"Right" = "select"  # Enter directory/select file (arrow key)
+"Enter" = "select"  # Enter directory/select file
+"Escape" = "back"   # Go back to parent directory
+"r" = "refresh"     # Refresh file list
+"F5" = "refresh"    # Refresh file list (F5 key)
+"/" = "search"      # Enter search mode
+
+# Search Mode Keys (automatically handled when in search mode):
+# - Type any character to search
+# - Backspace to delete last character  
+# - Up/Down arrows to navigate results
+# - Enter to select highlighted file and exit search
+# - Escape to exit search mode
 
 [ui]
 # User interface settings

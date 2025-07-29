@@ -2,15 +2,21 @@
 # Example showing different key mappings and settings
 
 [keymaps]
-# Arrow keys and common shortcuts
-quit = "q"
-up = "ArrowUp"      # Use arrow keys instead of vim keys
-down = "ArrowDown"
-left = "ArrowLeft"
-right = "ArrowRight"
-select = "Enter"
-back = "Backspace"  # Use backspace to go back
-refresh = "F5"      # F5 to refresh
+# Arrow keys and common shortcuts (alternative mapping)
+"q" = "quit"          # Quit the application
+"Up" = "up"           # Use arrow keys instead of vim keys
+"Down" = "down"       # Arrow down for selection
+"Left" = "back"       # Arrow left to go back
+"Right" = "select"    # Arrow right to enter/select
+"Enter" = "select"    # Enter key for selection
+"Backspace" = "back"  # Backspace to go back
+"F5" = "refresh"      # F5 to refresh
+"s" = "search"        # 's' key for search instead of '/'
+
+# This configuration shows how to:
+# - Use only arrow keys for navigation (no vim keys)
+# - Use different keys for common actions (Backspace, 's' for search)
+# - Customize the search trigger key
 
 [ui]
 # Minimal UI settings
