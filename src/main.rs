@@ -21,6 +21,37 @@ use std::{
     time::SystemTime,
 };
 
+// FLUX ARCHITECTURE IMPLEMENTATION
+
+// Actions (Flux Pattern)
+#[derive(Debug, Clone)]
+pub enum Action {
+    MoveSelection(isize),
+    EnterDirectory,
+    LoadDirectory(PathBuf),
+    Refresh,
+    Quit,
+}
+
+// Store (holds application state)
+#[derive(Debug)]
+pub struct Store {
+    state: AppState,
+    config: Config,
+}
+
+// Dispatcher (handles actions and updates store) - Flux Pattern
+pub struct Dispatcher {
+    store: Store,
+}
+
+#[derive(Debug)]
+pub struct AppState {
+    current_dir: PathBuf,
+    files: Vec<FileEntry>,
+    selected_index: usize,
+}
+
 #[derive(Debug)]
 struct FileEntry {
     name: String,
@@ -30,14 +61,126 @@ struct FileEntry {
     modified: Option<SystemTime>,
 }
 
-struct App {
-    current_dir: PathBuf,
-    files: Vec<FileEntry>,
-    selected_index: usize,
-    config: Config,
+impl Dispatcher {
+    fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let current_dir = env::current_dir()?;
+        let config = Config::load()?;
+        let mut store = Store {
+            state: AppState {
+                current_dir: current_dir.clone(),
+                files: Vec::new(),
+                selected_index: 0,
+            },
+            config,
+        };
+        store.load_files()?;
+        Ok(Dispatcher { store })
+    }
+
+    // Dispatcher - single point for all state changes (Flux Pattern)
+    fn dispatch(&mut self, action: Action) -> Result<(), String> {
+        match action {
+            Action::MoveSelection(direction) => {
+                self.store.move_selection(direction);
+                Ok(())
+            }
+            Action::EnterDirectory => {
+                self.store.enter_directory()
+            }
+            Action::LoadDirectory(path) => {
+                match env::set_current_dir(&path) {
+                    Ok(()) => {
+                        self.store.state.current_dir = path;
+                        match self.store.load_files() {
+                            Ok(()) => Ok(()),
+                            Err(e) => Err(format!("Failed to load directory: {}", e)),
+                        }
+                    }
+                    Err(e) => Err(format!("Failed to change directory: {}", e)),
+                }
+            }
+            Action::Refresh => {
+                match self.store.load_files() {
+                    Ok(()) => Ok(()),
+                    Err(e) => Err(format!("Failed to refresh: {}", e)),
+                }
+            }
+            Action::Quit => Ok(()),
+        }
+    }
+
+    // Delegate methods to access store state
+    fn get_store(&self) -> &Store {
+        &self.store
+    }
 }
 
-impl App {
+impl Store {
+
+    // Private methods for state manipulation
+    fn move_selection(&mut self, direction: isize) {
+        if self.state.files.is_empty() {
+            return;
+        }
+
+        let new_index = (self.state.selected_index as isize + direction)
+            .max(0)
+            .min(self.state.files.len() as isize - 1) as usize;
+        
+        self.state.selected_index = new_index;
+    }
+
+    fn enter_directory(&mut self) -> Result<(), String> {
+        if let Some(selected_file) = self.get_selected_file() {
+            if selected_file.is_dir {
+                match env::set_current_dir(&selected_file.path) {
+                    Ok(()) => {
+                        self.state.current_dir = selected_file.path.clone();
+                        match self.load_files() {
+                            Ok(()) => Ok(()),
+                            Err(e) => Err(format!("Failed to load directory contents: {}", e)),
+                        }
+                    }
+                    Err(e) => Err(format!("Failed to enter directory: {}", e)),
+                }
+            } else {
+                Err("Selected item is not a directory".to_string())
+            }
+        } else {
+            Err("No file selected".to_string())
+        }
+    }
+
+    fn load_files(&mut self) -> io::Result<()> {
+        self.state.files.clear();
+        self.state.selected_index = 0;
+        let entries = fs::read_dir(&self.state.current_dir)?;
+        
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            let metadata = entry.metadata()?;
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            
+            let file_entry = FileEntry {
+                name: file_name,
+                path: path.clone(),
+                size: metadata.len(),
+                is_dir: metadata.is_dir(),
+                modified: metadata.modified().ok(),
+            };
+            
+            self.state.files.push(file_entry);
+        }
+        
+        self.state.files.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(())
+    }
+
+    fn get_selected_file(&self) -> Option<&FileEntry> {
+        self.state.files.get(self.state.selected_index)
+    }
+
     fn get_file_content(&self, file: &FileEntry) -> String {
         if file.is_dir {
             self.get_directory_listing(&file.path)
@@ -99,32 +242,26 @@ impl App {
     }
 
     fn get_file_preview(&self, file_path: &PathBuf) -> String {
-        // Check file size first
         match fs::metadata(file_path) {
             Ok(metadata) => {
                 let size = metadata.len();
                 
-                // Don't preview very large files
-                if size > 10 * 1024 * 1024 { // 10MB limit
+                if size > 10 * 1024 * 1024 {
                     return format!("File too large to preview\nSize: {:.2} MB", size as f64 / (1024.0 * 1024.0));
                 }
 
-                // Try to read the file
                 match fs::read(file_path) {
                     Ok(bytes) => {
-                        // Check if file appears to be binary
                         if self.is_binary_content(&bytes) {
                             format!("Binary file\nSize: {} bytes\nType: {}", 
                                 size, 
                                 self.guess_file_type(file_path)
                             )
                         } else {
-                            // Try to convert to UTF-8 string
                             match String::from_utf8(bytes) {
                                 Ok(content) => {
                                     let lines: Vec<&str> = content.lines().collect();
                                     if lines.len() > 100 {
-                                        // Show first 100 lines for very long files
                                         format!("Text file preview (first 100 lines):\n\n{}\n\n... ({} more lines)", 
                                             lines[..100].join("\n"), 
                                             lines.len() - 100
@@ -147,20 +284,18 @@ impl App {
     }
 
     fn is_binary_content(&self, bytes: &[u8]) -> bool {
-        // Simple heuristic: if file contains null bytes or too many non-printable chars, consider it binary
         let null_count = bytes.iter().filter(|&&b| b == 0).count();
         if null_count > 0 {
             return true;
         }
 
-        // Check first 1024 bytes for non-printable characters
         let sample_size = std::cmp::min(1024, bytes.len());
         let non_printable = bytes[..sample_size]
             .iter()
-            .filter(|&&b| b < 32 && b != 9 && b != 10 && b != 13) // Allow tab, newline, carriage return
+            .filter(|&&b| b < 32 && b != 9 && b != 10 && b != 13)
             .count();
 
-        non_printable > sample_size / 4 // If more than 25% non-printable, consider binary
+        non_printable > sample_size / 4
     }
 
     fn guess_file_type(&self, file_path: &PathBuf) -> &'static str {
@@ -190,80 +325,31 @@ impl App {
             "No extension"
         }
     }
-    fn new() -> Result<App, Box<dyn std::error::Error>> {
-        let current_dir = env::current_dir()?;
-        let config = Config::load()?;
-        let mut app = App {
-            current_dir: current_dir.clone(),
-            files: Vec::new(),
-            selected_index: 0,
-            config,
-        };
-        app.load_files()?;
-        Ok(app)
-    }
+}
 
-    fn load_files(&mut self) -> io::Result<()> {
-        self.files.clear();
-        self.selected_index = 0;
-        let entries = fs::read_dir(&self.current_dir)?;
-        
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            let metadata = entry.metadata()?;
-            let file_name = entry.file_name().to_string_lossy().to_string();
-            
-            let file_entry = FileEntry {
-                name: file_name,
-                path: path.clone(),
-                size: metadata.len(),
-                is_dir: metadata.is_dir(),
-                modified: metadata.modified().ok(),
-            };
-            
-            self.files.push(file_entry);
-        }
-        
-        self.files.sort_by(|a, b| a.name.cmp(&b.name));
-        Ok(())
-    }
-
-    fn move_selection(&mut self, direction: isize) {
-        if self.files.is_empty() {
-            return;
-        }
-
-        let new_index = (self.selected_index as isize + direction)
-            .max(0)
-            .min(self.files.len() as isize - 1) as usize;
-        
-        self.selected_index = new_index;
-    }
-
-    fn get_selected_file(&self) -> Option<&FileEntry> {
-        self.files.get(self.selected_index)
-    }
-
-    fn enter_directory(&mut self) -> Result<(), String> {
-        if let Some(selected_file) = self.get_selected_file() {
-            if selected_file.is_dir {
-                match env::set_current_dir(&selected_file.path) {
-                    Ok(()) => {
-                        self.current_dir = selected_file.path.clone();
-                        match self.load_files() {
-                            Ok(()) => Ok(()),
-                            Err(e) => Err(format!("Failed to load directory contents: {}", e)),
-                        }
-                    }
-                    Err(e) => Err(format!("Failed to enter directory: {}", e)),
-                }
+// Action Creator - converts keyboard input to actions
+fn key_to_action(key: KeyCode, config: &Config) -> Option<Action> {
+    match key {
+        KeyCode::Char(c) => {
+            if config.key_matches(c, "quit") {
+                Some(Action::Quit)
+            } else if config.key_matches(c, "up") {
+                Some(Action::MoveSelection(-1))
+            } else if config.key_matches(c, "down") {
+                Some(Action::MoveSelection(1))
+            } else if config.key_matches(c, "right") {
+                Some(Action::EnterDirectory)
+            } else if config.key_matches(c, "refresh") {
+                Some(Action::Refresh)
             } else {
-                Err("Selected item is not a directory".to_string())
+                None
             }
-        } else {
-            Err("No file selected".to_string())
         }
+        KeyCode::Up => Some(Action::MoveSelection(-1)),
+        KeyCode::Down => Some(Action::MoveSelection(1)),
+        KeyCode::Right | KeyCode::Enter => Some(Action::EnterDirectory),
+        KeyCode::F(5) => Some(Action::Refresh),
+        _ => None
     }
 }
 
@@ -274,8 +360,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-    let result = run_app(&mut terminal, app);
+    let mut dispatcher = Dispatcher::new().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    let result = run_app(&mut terminal, &mut dispatcher);
 
     disable_raw_mode()?;
     execute!(
@@ -292,57 +378,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, dispatcher: &mut Dispatcher) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        terminal.draw(|f| view(f, dispatcher.get_store()))?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char(c) => {
-                    if app.config.key_matches(c, "quit") {
-                        return Ok(());
-                    } else if app.config.key_matches(c, "up") {
-                        app.move_selection(-1);
-                    } else if app.config.key_matches(c, "down") {
-                        app.move_selection(1);
-                    } else if app.config.key_matches(c, "right") {
-                        if let Err(e) = app.enter_directory() {
-                            // For now, we'll silently ignore errors
-                            // In the future, we could show error messages in the UI
-                            eprintln!("Directory navigation error: {}", e);
+            if let Some(action) = key_to_action(key.code, &dispatcher.get_store().config) {
+                match &action {
+                    Action::Quit => return Ok(()),
+                    _ => {
+                        if let Err(e) = dispatcher.dispatch(action) {
+                            eprintln!("Action error: {}", e);
                         }
                     }
                 }
-                KeyCode::Up => app.move_selection(-1),
-                KeyCode::Down => app.move_selection(1),
-                KeyCode::Right | KeyCode::Enter => {
-                    if let Err(e) = app.enter_directory() {
-                        eprintln!("Directory navigation error: {}", e);
-                    }
-                }
-                _ => {}
             }
         }
     }
 }
 
-fn ui(f: &mut Frame, app: &App) {
+// View function - renders the UI based on store state
+fn view(f: &mut Frame, store: &Store) {
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .margin(1)
         .constraints([
-            Constraint::Percentage(app.config.ui.panel_width_ratio as u16),
-            Constraint::Percentage(100 - app.config.ui.panel_width_ratio as u16),
+            Constraint::Percentage(store.config.ui.panel_width_ratio as u16),
+            Constraint::Percentage(100 - store.config.ui.panel_width_ratio as u16),
         ])
         .split(f.area());
 
     // Left panel - File list
-    let items: Vec<ListItem> = app
+    let items: Vec<ListItem> = store.state
         .files
         .iter()
         .enumerate()
         .map(|(i, file)| {
-            let style = if i == app.selected_index {
+            let style = if i == store.state.selected_index {
                 Style::default().bg(Color::Blue).fg(Color::White).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
@@ -354,12 +426,12 @@ fn ui(f: &mut Frame, app: &App) {
         .collect();
 
     let mut list_state = ListState::default();
-    list_state.select(Some(app.selected_index));
+    list_state.select(Some(store.state.selected_index));
 
     let files_list = List::new(items)
         .block(
             Block::default()
-                .title(format!("Files in {}", app.current_dir.display()))
+                .title(format!("Files in {}", store.state.current_dir.display()))
                 .borders(Borders::ALL)
         )
         .highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
@@ -367,8 +439,8 @@ fn ui(f: &mut Frame, app: &App) {
     f.render_stateful_widget(files_list, main_chunks[0], &mut list_state);
 
     // Right panel - File details
-    let details_text = if let Some(selected_file) = app.get_selected_file() {
-        format_file_details(app, selected_file)
+    let details_text = if let Some(selected_file) = store.get_selected_file() {
+        format_file_details(store, selected_file)
     } else {
         "No file selected".to_string()
     };
@@ -385,7 +457,7 @@ fn ui(f: &mut Frame, app: &App) {
     f.render_widget(details_paragraph, main_chunks[1]);
 }
 
-fn format_file_details(app: &App, file: &FileEntry) -> String {
+fn format_file_details(store: &Store, file: &FileEntry) -> String {
     let mut details = Vec::new();
     
     details.push(format!("Name: {}", file.name));
@@ -428,8 +500,7 @@ fn format_file_details(app: &App, file: &FileEntry) -> String {
     details.push("─".repeat(40));
     details.push("".to_string());
     
-    // Add content preview
-    let content = app.get_file_content(file);
+    let content = store.get_file_content(file);
     details.push(content);
     
     details.join("\n")
