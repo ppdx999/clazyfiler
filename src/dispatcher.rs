@@ -1,16 +1,18 @@
-use crate::{actions::Action, config::Config, store::Store};
+use crate::{actions::Action, config::Config, store::Store, modes::{ModeManager, ModeType}};
 use crossterm::event::KeyCode;
 use std::env;
 
 // Dispatcher (handles actions and updates store) - Flux Pattern
 pub struct Dispatcher {
     store: Store,
+    mode_manager: ModeManager,
 }
 
 impl Dispatcher {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let store = Store::new()?;
-        Ok(Dispatcher { store })
+        let mode_manager = ModeManager::new();
+        Ok(Dispatcher { store, mode_manager })
     }
 
     // Dispatcher - single point for all state changes (Flux Pattern)
@@ -45,11 +47,11 @@ impl Dispatcher {
                 }
             }
             Action::EnterSearchMode => {
-                self.store.enter_search_mode();
+                self.mode_manager.transition_to(ModeType::Search, &mut self.store);
                 Ok(())
             }
             Action::ExitSearchMode => {
-                self.store.exit_search_mode();
+                self.mode_manager.transition_to(ModeType::Explore, &mut self.store);
                 Ok(())
             }
             Action::UpdateSearchQuery(query) => {
@@ -68,32 +70,14 @@ impl Dispatcher {
     pub fn get_store(&self) -> &Store {
         &self.store
     }
+    
+    pub fn get_mode_manager(&self) -> &ModeManager {
+        &self.mode_manager
+    }
 }
 
-// Action Creator - converts keyboard input to actions
-pub fn key_to_action(key: KeyCode, config: &Config) -> Option<Action> {
-    let key_str = match key {
-        KeyCode::Char(c) => c.to_string(),
-        KeyCode::Up => "Up".to_string(),
-        KeyCode::Down => "Down".to_string(),
-        KeyCode::Left => "Left".to_string(),
-        KeyCode::Right => "Right".to_string(),
-        KeyCode::Enter => "Enter".to_string(),
-        KeyCode::Esc => "Escape".to_string(),
-        KeyCode::F(5) => "F5".to_string(),
-        _ => return None,
-    };
-
-    config.keymaps.get(&key_str).and_then(|action_str| {
-        match action_str.as_str() {
-            "quit" => Some(Action::Quit),
-            "up" => Some(Action::MoveSelection(-1)),
-            "down" => Some(Action::MoveSelection(1)),
-            "select" => Some(Action::EnterDirectory),
-            "back" => Some(Action::Back),
-            "refresh" => Some(Action::Refresh),
-            "search" => Some(Action::EnterSearchMode),
-            _ => None,
-        }
-    })
+// Action Creator - converts keyboard input to actions using mode-specific handling
+pub fn key_to_action(key: KeyCode, config: &Config, mode_manager: &ModeManager) -> Option<Action> {
+    // Delegate to current mode for key handling
+    mode_manager.handle_key(key, config)
 }

@@ -1,8 +1,10 @@
 mod actions;
 mod config;
 mod dispatcher;
+mod modes;
 mod store;
 mod ui;
+mod ui_helpers;
 
 use actions::Action;
 use dispatcher::{Dispatcher, key_to_action};
@@ -48,13 +50,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, dispatcher: &mut Dispatcher) -> io::Result<()> {
     loop {
-        terminal.draw(|f| view(f, dispatcher.get_store()))?;
+        terminal.draw(|f| view(f, dispatcher.get_store(), dispatcher.get_mode_manager()))?;
 
         if let Event::Key(key) = event::read()? {
             if key.code == KeyCode::Esc {
                 return Ok(())
             }
-            if let Some(action) = key_to_action(key.code, &dispatcher.get_store().config) {
+            if let Some(action) = key_to_action(key.code, &dispatcher.get_store().config, dispatcher.get_mode_manager()) {
                 match &action {
                     Action::Quit => return Ok(()),
                     _ => {
