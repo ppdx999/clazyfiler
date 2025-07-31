@@ -4,30 +4,35 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::state::AppState;
+use crate::state::{AppState, FileEntry};
+use std::time::UNIX_EPOCH;
 
 pub struct UIComponents;
 
 impl UIComponents {
     /// Render the file list component on the left side
-    pub fn render_file_list(frame: &mut Frame, area: Rect, _state: &AppState, _selected_index: Option<usize>) {
-        // Create a bordered block for the file list
+    pub fn render_file_list(frame: &mut Frame, area: Rect, state: &AppState) {
+        let title = format!("Files - {}", state.current_dir.display());
         let block = Block::default()
-            .title("Files")
+            .title(title)
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White));
 
-        // Mock file list for now - will be replaced with actual file data
-        let items: Vec<ListItem> = vec![
-            ListItem::new("Documents"),
-            ListItem::new("Downloads"),
-            ListItem::new("Pictures"),
-            ListItem::new("Music"),
-            ListItem::new("README.md"),
-            ListItem::new("config.toml"),
-        ];
+        let files = if state.search_active {
+            state.get_filtered_files()
+        } else {
+            state.files.iter().collect()
+        };
 
-        let list = List::new(items)
+        let items: Vec<ListItem> = files
+            .iter()
+            .map(|file| {
+                let icon = if file.is_directory { "📁" } else { "📄" };
+                ListItem::new(format!("{} {}", icon, file.name))
+            })
+            .collect();
+
+        let mut list = List::new(items)
             .block(block)
             .highlight_style(
                 Style::default()
@@ -35,23 +40,31 @@ impl UIComponents {
                     .fg(Color::Yellow)
             );
 
-        frame.render_widget(list, area);
+        // Set selection based on search state
+        if state.search_active {
+            // In search mode, highlight first result if any
+            if !files.is_empty() {
+                list = list.highlight_symbol("> ");
+            }
+        } else {
+            // In normal mode, use current selection
+            list = list.highlight_symbol("> ");
+        }
+
+        frame.render_stateful_widget(list, area, &mut ratatui::widgets::ListState::default().with_selected(Some(state.selected_index)));
     }
 
     /// Render the file description component on the right side
-    pub fn render_file_description(frame: &mut Frame, area: Rect, _state: &AppState, selected_file: Option<&str>) {
+    pub fn render_file_description(frame: &mut Frame, area: Rect, state: &AppState) {
         let block = Block::default()
             .title("File Info")
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White));
 
-        let content = match selected_file {
-            Some(filename) => {
-                format!(
-                    "File: {}\n\nSize: 1.2 KB\nModified: 2024-01-15 10:30:00\nPermissions: rw-r--r--\nType: Text file\n\nDescription:\nThis is a sample file description that shows detailed information about the selected file.", filename
-                )
-            },
-            None => "No file selected".to_string(),
+        let content = if let Some(selected_file) = state.get_selected_file() {
+            Self::format_file_info(selected_file)
+        } else {
+            "No file selected".to_string()
         };
 
         let paragraph = Paragraph::new(content)
@@ -61,9 +74,64 @@ impl UIComponents {
         frame.render_widget(paragraph, area);
     }
 
+    fn format_file_info(file: &FileEntry) -> String {
+        let file_type = if file.is_directory {
+            "Directory"
+        } else {
+            "File"
+        };
+
+        let size_str = if let Some(size) = file.size {
+            Self::format_file_size(size)
+        } else {
+            "N/A".to_string()
+        };
+
+        let modified_str = if let Some(modified) = file.modified {
+            if let Ok(duration) = modified.duration_since(UNIX_EPOCH) {
+                let secs = duration.as_secs();
+                let datetime = chrono::DateTime::from_timestamp(secs as i64, 0)
+                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                    .unwrap_or_else(|| "Unknown".to_string());
+                datetime
+            } else {
+                "Unknown".to_string()
+            }
+        } else {
+            "Unknown".to_string()
+        };
+
+        format!(
+            "Name: {}\n\nPath: {}\n\nType: {}\n\nSize: {}\n\nModified: {}\n\nFull Path:\n{}",
+            file.name,
+            file.path.parent().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string()),
+            file_type,
+            size_str,
+            modified_str,
+            file.path.display()
+        )
+    }
+
+    fn format_file_size(size: u64) -> String {
+        const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+        let mut size_f = size as f64;
+        let mut unit_index = 0;
+
+        while size_f >= 1024.0 && unit_index < UNITS.len() - 1 {
+            size_f /= 1024.0;
+            unit_index += 1;
+        }
+
+        if unit_index == 0 {
+            format!("{} {}", size, UNITS[unit_index])
+        } else {
+            format!("{:.1} {}", size_f, UNITS[unit_index])
+        }
+    }
+
     /// Render the search bar component at the bottom
-    pub fn render_search_bar(frame: &mut Frame, area: Rect, _state: &AppState, search_query: &str, is_active: bool) {
-        let style = if is_active {
+    pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState) {
+        let style = if state.search_active {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default().fg(Color::Gray)
@@ -74,10 +142,10 @@ impl UIComponents {
             .borders(Borders::ALL)
             .border_style(style);
 
-        let search_text = if search_query.is_empty() && !is_active {
+        let search_text = if state.search_query.is_empty() && !state.search_active {
             "Press '/' to search..."
         } else {
-            search_query
+            &state.search_query
         };
 
         let paragraph = Paragraph::new(search_text)
@@ -111,20 +179,13 @@ impl UIComponents {
     }
 
     /// Complete UI render function that combines all components
-    pub fn render_complete_ui(
-        frame: &mut Frame, 
-        state: &AppState, 
-        selected_index: Option<usize>,
-        selected_file: Option<&str>,
-        search_query: &str,
-        search_active: bool
-    ) {
+    pub fn render_complete_ui(frame: &mut Frame, state: &AppState) {
         let area = frame.area();
         let (file_list_area, description_area, search_area) = Self::create_main_layout(area);
 
-        // Render all components
-        Self::render_file_list(frame, file_list_area, state, selected_index);
-        Self::render_file_description(frame, description_area, state, selected_file);
-        Self::render_search_bar(frame, search_area, state, search_query, search_active);
+        // Render all components using state data
+        Self::render_file_list(frame, file_list_area, state);
+        Self::render_file_description(frame, description_area, state);
+        Self::render_search_bar(frame, search_area, state);
     }
 }

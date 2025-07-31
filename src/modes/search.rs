@@ -15,15 +15,8 @@ impl ModeBehavior for SearchMode {
         Ok(())
     }
     fn render(&self, frame: &mut ratatui::Frame, state: &AppState) {
-        // In search mode, search is active
-        UIComponents::render_complete_ui(
-            frame,
-            state,
-            Some(2), // Mock selected index in filtered results
-            Some("config.toml"), // Mock selected file from search results
-            "config", // Mock search query - will be replaced with actual query
-            true // Search is active
-        );
+        // In search mode, render UI with current state (search will be active in state)
+        UIComponents::render_complete_ui(frame, state);
     }
 }
 

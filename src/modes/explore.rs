@@ -14,15 +14,8 @@ impl ModeBehavior for ExploreMode {
         Ok(())
     }
     fn render(&self, frame: &mut ratatui::Frame, state: &AppState) {
-        // In explore mode, search is not active
-        UIComponents::render_complete_ui(
-            frame,
-            state,
-            Some(0), // Mock selected index - will be replaced with actual selection
-            Some("README.md"), // Mock selected file - will be replaced with actual file
-            "", // No search query in explore mode
-            false // Search is not active
-        );
+        // In explore mode, render UI with current state
+        UIComponents::render_complete_ui(frame, state);
     }
 }
 
