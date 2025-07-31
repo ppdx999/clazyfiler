@@ -1,19 +1,19 @@
-use crossterm::event::KeyCode;
+use crossterm::event::KeyEvent;
 
-use crate::{actions::Action, modes::interface::ModeBehavior};
+use crate::{actions::Action, modes::interface::ModeBehavior, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreMode {
 }
 
 impl ModeBehavior for ExploreMode {
-    fn handle_key(&self, key: KeyCode) -> Option<Action> {
+    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Option<Action> {
         return None
     }
-    fn dispatch(&mut self, _action: Action) -> Result<(), String> {
+    fn dispatch(&mut self, _action: Action, _state: &mut AppState) -> Result<(), String> {
         Ok(())
     }
-    fn render(&self, _frame: &mut ratatui::Frame) {
+    fn render(&self, _frame: &mut ratatui::Frame, _state: &AppState) {
     }
 }
 

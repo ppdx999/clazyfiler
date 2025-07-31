@@ -1,44 +1,44 @@
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
-    actions::Action,
-    modes::Mode,
-    modes::interface::ModeBehavior,
+    actions::Action, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
 };
     
 pub struct App {
-    pub mode: Mode
+    pub mode: Mode,
+    pub state: AppState
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            mode: Mode::new_explore_mode()
+            mode: Mode::new_explore_mode(),
+            state: AppState::new()
         }
     }
 
-    pub fn handle_key(&self, key: KeyCode) -> Option<Action> {
+    pub fn handle_key(&self, key: KeyEvent) -> Option<Action> {
         // Handle global key event
-        if key == KeyCode::Char('q') {
+        if is_ctrl_c(&key) {
             return Some(Action::Quit)
         }
 
         // Handle mode specific key event
-        return self.mode.handle_key(key)
+        return self.mode.handle_key(key, &self.state)
     }
 
     pub fn dispatch(&mut self, action: Action) -> Result<(), String> {
         // Handle global action dispatch
 
         // Hnadle mode specific action dispatch
-        return self.mode.dispatch(action)
+        return self.mode.dispatch(action, &mut self.state)
     }
 
     pub fn render(&self, frame: &mut Frame) {
         // Handle global rendering
 
         // Handle mode specific rendering
-        return self.mode.render(frame);
+        return self.mode.render(frame, &self.state);
     }
 }
 
@@ -52,7 +52,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Box<dyn std
             continue;
         };
 
-        let Some(action) = app.handle_key(key.code) else {
+        let Some(action) = app.handle_key(key) else {
             continue;
         };
 

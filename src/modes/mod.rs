@@ -2,8 +2,8 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{actions::Action, modes::{explore::ExploreMode, interface::ModeBehavior, search::SearchMode}};
-use crossterm::event::KeyCode;
+use crate::{actions::Action, modes::{explore::ExploreMode, interface::ModeBehavior, search::SearchMode}, state::AppState};
+use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
 #[derive(Debug)]
@@ -14,25 +14,25 @@ pub enum Mode {
 
 impl ModeBehavior for Mode {
     /// Handle keyboard input - delegates to current mode without pattern matching hell
-    fn handle_key(&self, key: KeyCode) -> Option<Action> {
+    fn handle_key(&self, key: KeyEvent, state: &AppState) -> Option<Action> {
         match self {
-            Mode::Explore(explor_mode) => explor_mode.handle_key(key),
-            Mode::Search(search_mode) => search_mode.handle_key(key)
+            Mode::Explore(explor_mode) => explor_mode.handle_key(key, state),
+            Mode::Search(search_mode) => search_mode.handle_key(key, state)
         }
     }
 
-    fn dispatch(&mut self, action: Action) -> Result<(), String> {
+    fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
         match self {
-            Mode::Explore(explore_mode) => explore_mode.dispatch(action),
-            Mode::Search(search_mode) => search_mode.dispatch(action)
+            Mode::Explore(explore_mode) => explore_mode.dispatch(action, state),
+            Mode::Search(search_mode) => search_mode.dispatch(action, state)
         }
     }
 
     /// Render current mode - delegates without ModeManager overhead
-    fn render(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame, state: &AppState) {
         match self {
-            Mode::Explore(explore_mode) => explore_mode.render(frame),
-            Mode::Search(search_mode) => search_mode.render(frame)
+            Mode::Explore(explore_mode) => explore_mode.render(frame, state),
+            Mode::Search(search_mode) => search_mode.render(frame, state)
         }
     }
 }
