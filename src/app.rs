@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
     actions::Action, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
