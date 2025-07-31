@@ -2,4 +2,12 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Action {
     Quit,
+    MoveUp,
+    MoveDown,
+    MoveLeft,
+    MoveRight,
+    Select,
+    Back,
+    Refresh,
+    Search,
 }

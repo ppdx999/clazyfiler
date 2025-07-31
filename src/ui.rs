@@ -51,7 +51,14 @@ impl UIComponents {
             list = list.highlight_symbol("> ");
         }
 
-        frame.render_stateful_widget(list, area, &mut ratatui::widgets::ListState::default().with_selected(Some(state.selected_index)));
+        // Ensure selection index is within bounds
+        let selected_index = if files.is_empty() {
+            None
+        } else {
+            Some(state.selected_index.min(files.len().saturating_sub(1)))
+        };
+        
+        frame.render_stateful_widget(list, area, &mut ratatui::widgets::ListState::default().with_selected(selected_index));
     }
 
     /// Render the file description component on the right side
