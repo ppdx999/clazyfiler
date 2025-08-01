@@ -27,6 +27,7 @@ impl ModeBehavior for ExploreMode {
             KeyCode::Char('r') => vec![Action::Refresh],
             KeyCode::F(5) => vec![Action::Refresh],
             KeyCode::Char('/') => vec![Action::SwitchMode(ModeSwitchAction::EnterSearchMode)],
+            KeyCode::Char('q') => vec![Action::Quit],
             
             _ => vec![],
         }
