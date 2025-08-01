@@ -116,7 +116,7 @@ impl AppState {
         self.search_query.push(c);
     }
 
-    pub fn backspace_search_query(&mut self) {
+    pub fn pop_search_query(&mut self) {
         self.search_query.pop();
     }
 

@@ -11,7 +11,7 @@ pub enum Action {
     Refresh,
     SwitchMode(ModeSwitchAction),
     SearchInput(char),
-    SearchEnter,
+    SearchPop,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
