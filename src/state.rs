@@ -17,7 +17,6 @@ pub struct AppState {
     pub files: Vec<FileEntry>,
     pub selected_index: usize,
     pub search_query: String,
-    pub search_active: bool,
 }
 
 impl AppState {
@@ -28,7 +27,6 @@ impl AppState {
             files: Vec::new(),
             selected_index: 0,
             search_query: String::new(),
-            search_active: false,
         };
         
         state.refresh_files();

@@ -18,11 +18,7 @@ impl UIComponents {
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White));
 
-        let files = if state.search_active {
-            state.get_filtered_files()
-        } else {
-            state.files.iter().collect()
-        };
+        let files = state.get_filtered_files();
 
         let items: Vec<ListItem> = files
             .iter()
@@ -41,7 +37,7 @@ impl UIComponents {
             );
 
         // Set selection based on search state
-        if state.search_active {
+        if state.search_query.is_empty() {
             // In search mode, highlight first result if any
             if !files.is_empty() {
                 list = list.highlight_symbol("> ");
@@ -138,7 +134,7 @@ impl UIComponents {
 
     /// Render the search bar component at the bottom
     pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState) {
-        let style = if state.search_active {
+        let style = if state.search_query.is_empty() {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default().fg(Color::Gray)
@@ -149,7 +145,7 @@ impl UIComponents {
             .borders(Borders::ALL)
             .border_style(style);
 
-        let search_text = if state.search_query.is_empty() && !state.search_active {
+        let search_text = if state.search_query.is_empty() {
             "Press '/' to search..."
         } else {
             &state.search_query

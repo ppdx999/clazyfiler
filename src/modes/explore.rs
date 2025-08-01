@@ -69,12 +69,8 @@ impl ModeBehavior for ExploreMode {
         UIComponents::render_complete_ui(frame, state);
     }
     
-    fn on_enter(&mut self, state: &mut AppState) -> Result<(), String> {
+    fn on_enter(&mut self, _state: &mut AppState) -> Result<(), String> {
         // When entering explore mode, ensure search is disabled
-        if state.search_active {
-            state.search_active = false;
-            state.search_query.clear();
-        }
         Ok(())
     }
     

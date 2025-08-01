@@ -33,18 +33,13 @@ impl ModeBehavior for SearchMode {
         UIComponents::render_complete_ui(frame, state);
     }
     
-    fn on_enter(&mut self, state: &mut AppState) -> Result<(), String> {
+    fn on_enter(&mut self, _state: &mut AppState) -> Result<(), String> {
         // When entering search mode, activate search if not already active
-        if !state.search_active {
-            state.search_active = true;
-        }
         Ok(())
     }
     
-    fn on_exit(&mut self, state: &mut AppState) -> Result<(), String> {
+    fn on_exit(&mut self, _state: &mut AppState) -> Result<(), String> {
         // When exiting search mode, clear search state
-        state.search_active = false;
-        state.search_query.clear();
         Ok(())
     }
 }
