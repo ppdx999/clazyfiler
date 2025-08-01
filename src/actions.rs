@@ -9,5 +9,12 @@ pub enum Action {
     Select,
     Back,
     Refresh,
-    Search,
+    SwitchMode(ModeSwitchAction),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ModeSwitchAction {
+    EnterExploreMode,
+    EnterSearchMode,
+}
+

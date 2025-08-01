@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::Action, modes::interface::ModeBehavior, state::AppState, ui::UIComponents};
+use crate::{actions::{Action, ModeSwitchAction}, modes::interface::ModeBehavior, state::AppState, ui::UIComponents};
 
 #[derive(Debug)]
 pub struct ExploreMode {
@@ -26,7 +26,7 @@ impl ModeBehavior for ExploreMode {
             KeyCode::Esc => Some(Action::Back),
             KeyCode::Char('r') => Some(Action::Refresh),
             KeyCode::F(5) => Some(Action::Refresh),
-            KeyCode::Char('/') => Some(Action::Search),
+            KeyCode::Char('/') => Some(Action::SwitchMode(ModeSwitchAction::EnterSearchMode)),
             
             _ => None,
         }
@@ -61,7 +61,7 @@ impl ModeBehavior for ExploreMode {
                 state.refresh_files();
                 Ok(())
             },
-            Action::Search => {
+            Action::SwitchMode(ModeSwitchAction::EnterSearchMode) => {
                 state.toggle_search();
                 Ok(())
             },

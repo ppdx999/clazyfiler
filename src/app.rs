@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
-    actions::Action, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
+    actions::{Action, ModeSwitchAction}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
 };
     
 pub struct App {
@@ -36,6 +36,14 @@ impl App {
 
     pub fn dispatch(&mut self, action: Action) -> Result<(), String> {
         // Handle global action dispatch
+        //   - Handle Mode Switch
+        if let Action::SwitchMode(switch_action) = &action {
+            let new_mode = match switch_action {
+                ModeSwitchAction::EnterExploreMode => Mode::new_explore_mode(),
+                ModeSwitchAction::EnterSearchMode => Mode::new_search_mode(),
+            };
+            self.mode.switch_to(new_mode, &mut self.state);
+        }
 
         // Hnadle mode specific action dispatch
         return self.mode.dispatch(action, &mut self.state)

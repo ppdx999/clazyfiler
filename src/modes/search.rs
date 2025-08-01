@@ -35,3 +35,10 @@ impl ModeBehavior for SearchMode {
     }
 }
 
+impl SearchMode {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
