@@ -61,10 +61,6 @@ impl ModeBehavior for ExploreMode {
                 state.refresh_files();
                 Ok(())
             },
-            Action::SwitchMode(ModeSwitchAction::EnterSearchMode) => {
-                state.toggle_search();
-                Ok(())
-            },
             _ => Ok(()),
         }
     }

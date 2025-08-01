@@ -122,13 +122,6 @@ impl AppState {
         self.search_query.pop();
     }
 
-    pub fn toggle_search(&mut self) {
-        self.search_active = !self.search_active;
-        if !self.search_active {
-            self.search_query.clear();
-        }
-    }
-
     pub fn get_filtered_files(&self) -> Vec<&FileEntry> {
         if self.search_query.is_empty() {
             self.files.iter().collect()
