@@ -118,6 +118,10 @@ impl AppState {
         self.search_query.push(c);
     }
 
+    pub fn backspace_search_query(&mut self) {
+        self.search_query.pop();
+    }
+
     pub fn toggle_search(&mut self) {
         self.search_active = !self.search_active;
         if !self.search_active {

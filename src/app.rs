@@ -24,10 +24,10 @@ impl App {
         app
     }
 
-    pub fn handle_key(&self, key: KeyEvent) -> Option<Action> {
+    pub fn handle_key(&self, key: KeyEvent) -> Vec<Action> {
         // Handle global key event
         if is_ctrl_c(&key) {
-            return Some(Action::Quit)
+            return vec![Action::Quit]
         }
 
         // Handle mode specific key event
@@ -42,7 +42,10 @@ impl App {
                 ModeSwitchAction::EnterExploreMode => Mode::new_explore_mode(),
                 ModeSwitchAction::EnterSearchMode => Mode::new_search_mode(),
             };
-            self.mode.switch_to(new_mode, &mut self.state);
+            if let Err(e) = self.mode.switch_to(new_mode, &mut self.state) {
+                eprintln!("Mode switch error: {}", e);
+                return Err(e);
+            }
         }
 
         // Hnadle mode specific action dispatch
@@ -67,16 +70,20 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Box<dyn std
             continue;
         };
 
-        let Some(action) = app.handle_key(key) else {
+        let actions = app.handle_key(key);
+        
+        if actions.is_empty() {
             continue;
-        };
-
-        if let Action::Quit = &action {
-            return Ok(());
         }
 
-        if let Err(e) = app.dispatch(action) {
-            eprintln!("Action error: {}", e);
+        for action in actions {
+            if let Action::Quit = &action {
+                return Ok(());
+            }
+
+            if let Err(e) = app.dispatch(action) {
+                eprintln!("Action error: {}", e);
+            }
         }
     }
 }

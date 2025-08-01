@@ -7,28 +7,28 @@ pub struct ExploreMode {
 }
 
 impl ModeBehavior for ExploreMode {
-    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Option<Action> {
+    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Vec<Action> {
         match key.code {
             // Vim-style navigation
-            KeyCode::Char('j') => Some(Action::MoveDown),
-            KeyCode::Char('k') => Some(Action::MoveUp),
-            KeyCode::Char('h') => Some(Action::Back),
-            KeyCode::Char('l') => Some(Action::Select),
+            KeyCode::Char('j') => vec![Action::MoveDown],
+            KeyCode::Char('k') => vec![Action::MoveUp],
+            KeyCode::Char('h') => vec![Action::Back],
+            KeyCode::Char('l') => vec![Action::Select],
             
             // Arrow key navigation
-            KeyCode::Down => Some(Action::MoveDown),
-            KeyCode::Up => Some(Action::MoveUp),
-            KeyCode::Left => Some(Action::Back),
-            KeyCode::Right => Some(Action::Select),
+            KeyCode::Down => vec![Action::MoveDown],
+            KeyCode::Up => vec![Action::MoveUp],
+            KeyCode::Left => vec![Action::Back],
+            KeyCode::Right => vec![Action::Select],
             
             // Other common actions
-            KeyCode::Enter => Some(Action::Select),
-            KeyCode::Esc => Some(Action::Back),
-            KeyCode::Char('r') => Some(Action::Refresh),
-            KeyCode::F(5) => Some(Action::Refresh),
-            KeyCode::Char('/') => Some(Action::SwitchMode(ModeSwitchAction::EnterSearchMode)),
+            KeyCode::Enter => vec![Action::Select],
+            KeyCode::Esc => vec![Action::Back],
+            KeyCode::Char('r') => vec![Action::Refresh],
+            KeyCode::F(5) => vec![Action::Refresh],
+            KeyCode::Char('/') => vec![Action::SwitchMode(ModeSwitchAction::EnterSearchMode)],
             
-            _ => None,
+            _ => vec![],
         }
     }
     fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {

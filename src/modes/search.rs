@@ -1,24 +1,28 @@
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::Action, modes::interface::ModeBehavior, state::AppState, ui::UIComponents};
+use crate::{actions::{Action, ModeSwitchAction}, modes::interface::ModeBehavior, state::AppState, ui::UIComponents};
 
 #[derive(Debug)]
 pub struct SearchMode {
 }
 
 impl ModeBehavior for SearchMode {
-    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Option<Action> {
+    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Vec<Action> {
         match key.code {
-            KeyCode::Enter => Some(Action::SearchEnter),
-            KeyCode::Char(c) => Some(Action::SearchInput(c)),
-            _ => None,
+            KeyCode::Enter => vec![Action::SearchEnter, Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
+            KeyCode::Char(c) => vec![Action::SearchInput(c)],
+            _ => vec![],
         }
     }
     fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
         match action {
             Action::SearchInput(c) => {
-                state.append_search_query(c);
+                if c == '\x08' { // Backspace character
+                    state.backspace_search_query();
+                } else {
+                    state.append_search_query(c);
+                }
                 Ok(())
             },
             _ => Ok(())
