@@ -7,9 +7,9 @@ use ratatui::{
 use crate::state::{AppState, FileEntry};
 use std::time::UNIX_EPOCH;
 
-pub struct UIComponents;
+pub struct UI;
 
-impl UIComponents {
+impl UI {
     /// Render the file list component on the left side
     pub fn render_file_list(frame: &mut Frame, area: Rect, state: &AppState) {
         let title = format!("Files - {}", state.current_dir.display());
