@@ -1,5 +1,5 @@
 
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{actions::Action, modes::interface::ModeBehavior, state::AppState, ui::UIComponents};
 
@@ -8,11 +8,21 @@ pub struct SearchMode {
 }
 
 impl ModeBehavior for SearchMode {
-    fn handle_key(&self, _key: KeyEvent, _state: &AppState) -> Option<Action> {
-        return None
+    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Option<Action> {
+        match key.code {
+            KeyCode::Enter => Some(Action::SearchEnter),
+            KeyCode::Char(c) => Some(Action::SearchInput(c)),
+            _ => None,
+        }
     }
-    fn dispatch(&mut self, _action: Action, _state: &mut AppState) -> Result<(), String> {
-        Ok(())
+    fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
+        match action {
+            Action::SearchInput(c) => {
+                state.append_search_query(c);
+                Ok(())
+            },
+            _ => Ok(())
+        }
     }
     fn render(&self, frame: &mut ratatui::Frame, state: &AppState) {
         // In search mode, render UI with current state (search will be active in state)

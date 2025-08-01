@@ -10,6 +10,8 @@ pub enum Action {
     Back,
     Refresh,
     SwitchMode(ModeSwitchAction),
+    SearchInput(char),
+    SearchEnter,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

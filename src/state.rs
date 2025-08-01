@@ -114,6 +114,10 @@ impl AppState {
         self.search_query = query;
     }
 
+    pub fn append_search_query(&mut self, c: char) {
+        self.search_query.push(c);
+    }
+
     pub fn toggle_search(&mut self) {
         self.search_active = !self.search_active;
         if !self.search_active {
