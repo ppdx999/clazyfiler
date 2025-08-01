@@ -35,11 +35,43 @@ impl ModeBehavior for Mode {
             Mode::Search(search_mode) => search_mode.render(frame, state)
         }
     }
+    
+    fn on_enter(&mut self, state: &mut AppState) -> Result<(), String> {
+        match self {
+            Mode::Explore(explore_mode) => explore_mode.on_enter(state),
+            Mode::Search(search_mode) => search_mode.on_enter(state)
+        }
+    }
+    
+    fn on_exit(&mut self, state: &mut AppState) -> Result<(), String> {
+        match self {
+            Mode::Explore(explore_mode) => explore_mode.on_exit(state),
+            Mode::Search(search_mode) => search_mode.on_exit(state)
+        }
+    }
 }
 
 
 impl Mode {
     pub fn new_explore_mode() -> Self {
         Mode::Explore(ExploreMode::new())
+    }
+    
+    pub fn new_search_mode() -> Self {
+        Mode::Search(SearchMode::new())
+    }
+    
+    /// Switch from current mode to a new mode, calling on_exit and on_enter appropriately
+    pub fn switch_to(&mut self, new_mode: Mode, state: &mut AppState) -> Result<(), String> {
+        // Call on_exit for current mode
+        self.on_exit(state)?;
+        
+        // Replace current mode with new mode
+        *self = new_mode;
+        
+        // Call on_enter for new mode
+        self.on_enter(state)?;
+        
+        Ok(())
     }
 }

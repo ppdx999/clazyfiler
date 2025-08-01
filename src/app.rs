@@ -11,10 +11,17 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        Self {
+        let mut app = Self {
             mode: Mode::new_explore_mode(),
             state: AppState::new()
+        };
+        
+        // Call on_enter for the initial mode
+        if let Err(e) = app.mode.on_enter(&mut app.state) {
+            eprintln!("Error initializing mode: {}", e);
         }
+        
+        app
     }
 
     pub fn handle_key(&self, key: KeyEvent) -> Option<Action> {
