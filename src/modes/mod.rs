@@ -2,7 +2,7 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{actions::Action, modes::{explore::ExploreMode, interface::ModeBehavior, search::SearchMode}, state::AppState};
+use crate::{actions::{Action, ModeSwitchAction}, modes::{explore::ExploreMode, interface::ModeBehavior, search::SearchMode}, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
@@ -62,12 +62,15 @@ impl Mode {
     }
     
     /// Switch from current mode to a new mode, calling on_exit and on_enter appropriately
-    pub fn switch_to(&mut self, new_mode: Mode, state: &mut AppState) -> Result<(), String> {
+    pub fn switch_to(&mut self, switch_action: ModeSwitchAction, state: &mut AppState) -> Result<(), String> {
         // Call on_exit for current mode
         self.on_exit(state)?;
         
         // Replace current mode with new mode
-        *self = new_mode;
+        *self = match switch_action {
+            ModeSwitchAction::EnterExploreMode => Self::new_explore_mode(),
+            ModeSwitchAction::EnterSearchMode => Self::new_search_mode(),
+        };
         
         // Call on_enter for new mode
         self.on_enter(state)?;
