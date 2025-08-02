@@ -163,4 +163,9 @@ impl AppState {
         self.update_filtered_files();
     }
 
+    pub fn clear_search_query(&mut self) {
+        self.search_query.clear();
+        self.update_filtered_files();
+    }
+
 }

@@ -12,7 +12,7 @@ impl ModeBehavior for SearchMode {
         match key.code {
             // Exit search mode
             KeyCode::Enter => vec![Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
-            KeyCode::Esc => vec![Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
+            KeyCode::Esc => vec![Action::SearchClear, Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
             
             // Search input
             KeyCode::Backspace => vec![Action::SearchPop],
@@ -37,6 +37,10 @@ impl ModeBehavior for SearchMode {
             },
             Action::SearchPop => {
                 state.pop_search_query();
+                Ok(())
+            },
+            Action::SearchClear => {
+                state.clear_search_query();
                 Ok(())
             }
             _ => Ok(())

@@ -11,6 +11,7 @@ pub enum Action {
     Refresh,
     SwitchMode(ModeSwitchAction),
     SearchInput(char),
+    SearchClear,
     SearchPop,
 }
 
