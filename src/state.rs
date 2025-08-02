@@ -168,4 +168,20 @@ impl AppState {
         self.update_filtered_files();
     }
 
+    pub fn delete_word_backward(&mut self) {
+        // Delete word backward (Ctrl+W) - find last space and delete from there
+        if let Some(pos) = self.search_query.rfind(' ') {
+            self.search_query.truncate(pos);
+        } else {
+            self.search_query.clear();
+        }
+        self.update_filtered_files();
+    }
+
+    pub fn delete_to_end(&mut self) {
+        // Delete to end of line (Ctrl+K) - in search, this is same as clear
+        self.search_query.clear();
+        self.update_filtered_files();
+    }
+
 }

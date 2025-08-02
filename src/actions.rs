@@ -13,6 +13,10 @@ pub enum Action {
     SearchInput(char),
     SearchClear,
     SearchPop,
+    SearchDeleteWord,    // Ctrl+W - delete word backward
+    SearchDeleteToEnd,   // Ctrl+K - delete to end of line
+    SearchHome,          // Ctrl+A - move to beginning
+    SearchEnd,           // Ctrl+E - move to end
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
