@@ -10,14 +10,31 @@ pub struct SearchMode {
 impl ModeBehavior for SearchMode {
     fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Vec<Action> {
         match key.code {
+            // Navigation within search results
+            KeyCode::Char('j') | KeyCode::Down => vec![Action::MoveDown],
+            KeyCode::Char('k') | KeyCode::Up => vec![Action::MoveUp],
+            
+            // Exit search mode
             KeyCode::Enter => vec![Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
+            KeyCode::Esc => vec![Action::SwitchMode(ModeSwitchAction::EnterExploreMode)],
+            
+            // Search input
             KeyCode::Backspace => vec![Action::SearchPop],
             KeyCode::Char(c) => vec![Action::SearchInput(c)],
+            
             _ => vec![],
         }
     }
     fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
         match action {
+            Action::MoveUp => {
+                state.move_selection_up();
+                Ok(())
+            },
+            Action::MoveDown => {
+                state.move_selection_down();
+                Ok(())
+            },
             Action::SearchInput(c) => {
                 state.append_search_query(c);
                 Ok(())

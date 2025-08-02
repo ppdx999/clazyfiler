@@ -18,10 +18,8 @@ impl UI {
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White));
 
-        let files = state.get_filtered_files();
-
-        let items: Vec<ListItem> = files
-            .iter()
+        let items: Vec<ListItem> = (0..state.filtered_files_len())
+            .filter_map(|i| state.get_filtered_file(i))
             .map(|file| {
                 let icon = if file.is_directory { "📁" } else { "📄" };
                 ListItem::new(format!("{} {}", icon, file.name))
@@ -36,22 +34,16 @@ impl UI {
                     .fg(Color::Yellow)
             );
 
-        // Set selection based on search state
-        if state.search_query.is_empty() {
-            // In search mode, highlight first result if any
-            if !files.is_empty() {
-                list = list.highlight_symbol("> ");
-            }
-        } else {
-            // In normal mode, use current selection
+        // Always show highlight symbol if we have files
+        if state.filtered_files_len() > 0 {
             list = list.highlight_symbol("> ");
         }
 
-        // Ensure selection index is within bounds
-        let selected_index = if files.is_empty() {
+        // Use selection index directly - it's already bounded to filtered_files
+        let selected_index = if state.filtered_files_len() == 0 {
             None
         } else {
-            Some(state.selected_index.min(files.len().saturating_sub(1)))
+            Some(state.selected_index)
         };
         
         frame.render_stateful_widget(list, area, &mut ratatui::widgets::ListState::default().with_selected(selected_index));

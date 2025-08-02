@@ -15,7 +15,8 @@ pub struct FileEntry {
 pub struct AppState {
     pub current_dir: PathBuf,
     pub files: Vec<FileEntry>,
-    pub selected_index: usize,
+    pub filtered_files: Vec<usize>, // Indices into files Vec
+    pub selected_index: usize,      // Index into filtered_files
     pub search_query: String,
 }
 
@@ -25,6 +26,7 @@ impl AppState {
         let mut state = Self {
             current_dir: current_dir.clone(),
             files: Vec::new(),
+            filtered_files: Vec::new(),
             selected_index: 0,
             search_query: String::new(),
         };
@@ -60,14 +62,52 @@ impl AppState {
             }
         });
         
+        // Update filtered files after refresh
+        self.update_filtered_files();
+    }
+
+    fn update_filtered_files(&mut self) {
+        if self.search_query.is_empty() {
+            // No search: all files are visible
+            self.filtered_files = (0..self.files.len()).collect();
+        } else {
+            // Search active: filter files by name
+            self.filtered_files = self.files
+                .iter()
+                .enumerate()
+                .filter(|(_, file)| {
+                    file.name.to_lowercase().contains(&self.search_query.to_lowercase())
+                })
+                .map(|(index, _)| index)
+                .collect();
+        }
+        
         // Reset selection if out of bounds
-        if self.selected_index >= self.files.len() && !self.files.is_empty() {
-            self.selected_index = self.files.len() - 1;
+        if self.selected_index >= self.filtered_files.len() && !self.filtered_files.is_empty() {
+            self.selected_index = self.filtered_files.len() - 1;
+        } else if self.filtered_files.is_empty() {
+            self.selected_index = 0;
         }
     }
 
     pub fn get_selected_file(&self) -> Option<&FileEntry> {
-        self.files.get(self.selected_index)
+        if let Some(&file_index) = self.filtered_files.get(self.selected_index) {
+            self.files.get(file_index)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_filtered_file(&self, index: usize) -> Option<&FileEntry> {
+        if let Some(&file_index) = self.filtered_files.get(index) {
+            self.files.get(file_index)
+        } else {
+            None
+        }
+    }
+
+    pub fn filtered_files_len(&self) -> usize {
+        self.filtered_files.len()
     }
 
     pub fn move_selection_up(&mut self) {
@@ -77,7 +117,7 @@ impl AppState {
     }
 
     pub fn move_selection_down(&mut self) {
-        if self.selected_index < self.files.len().saturating_sub(1) {
+        if self.selected_index < self.filtered_files.len().saturating_sub(1) {
             self.selected_index += 1;
         }
     }
@@ -110,26 +150,17 @@ impl AppState {
 
     pub fn set_search_query(&mut self, query: String) {
         self.search_query = query;
+        self.update_filtered_files();
     }
 
     pub fn append_search_query(&mut self, c: char) {
         self.search_query.push(c);
+        self.update_filtered_files();
     }
 
     pub fn pop_search_query(&mut self) {
         self.search_query.pop();
+        self.update_filtered_files();
     }
 
-    pub fn get_filtered_files(&self) -> Vec<&FileEntry> {
-        if self.search_query.is_empty() {
-            self.files.iter().collect()
-        } else {
-            self.files
-                .iter()
-                .filter(|file| {
-                    file.name.to_lowercase().contains(&self.search_query.to_lowercase())
-                })
-                .collect()
-        }
-    }
 }
