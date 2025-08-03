@@ -48,8 +48,8 @@ impl App {
     pub fn render(&self, frame: &mut Frame) {
         // Handle global rendering
 
-        // Handle mode specific rendering
-        return self.mode.render(frame, &self.state);
+        // Handle mode specific rendering with mode context
+        return self.mode.render_with_mode_context(frame, &self.state);
     }
 }
 

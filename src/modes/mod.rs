@@ -61,6 +61,12 @@ impl Mode {
         Mode::Search(SearchMode::new())
     }
     
+    /// Render with mode awareness - provides mode context to UI
+    pub fn render_with_mode_context(&self, frame: &mut Frame, state: &AppState) {
+        use crate::ui::UI;
+        UI::render_complete_ui(frame, state, self);
+    }
+    
     /// Switch from current mode to a new mode, calling on_exit and on_enter appropriately
     pub fn switch_to(&mut self, switch_action: ModeSwitchAction, state: &mut AppState) -> Result<(), String> {
         // Call on_exit for current mode

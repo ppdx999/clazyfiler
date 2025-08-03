@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::{Action, ModeSwitchAction}, modes::interface::ModeBehavior, state::AppState, ui::UI};
+use crate::{actions::{Action, ModeSwitchAction}, modes::interface::ModeBehavior, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreMode {
@@ -65,9 +65,10 @@ impl ModeBehavior for ExploreMode {
             _ => Ok(()),
         }
     }
-    fn render(&self, frame: &mut ratatui::Frame, state: &AppState) {
+    fn render(&self, _frame: &mut ratatui::Frame, _state: &AppState) {
         // In explore mode, render UI with current state
-        UI::render_complete_ui(frame, state);
+        // Note: This is now handled by Mode::render_with_mode_context
+        // Individual modes no longer call UI directly
     }
     
     fn on_enter(&mut self, _state: &mut AppState) -> Result<(), String> {

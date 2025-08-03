@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::state::{AppState, FileEntry};
+use crate::{modes::Mode, state::{AppState, FileEntry}};
 use std::time::UNIX_EPOCH;
 
 pub struct UI;
@@ -125,27 +125,37 @@ impl UI {
     }
 
     /// Render the search bar component at the bottom
-    pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState) {
-        let style = if state.search_query.is_empty() {
-            Style::default().fg(Color::Yellow)
-        } else {
-            Style::default().fg(Color::Gray)
+    pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState, mode: &Mode) {
+        let (title, border_color, text_color) = match mode {
+            Mode::Search(_) => (
+                "🔍 Search Mode (Active)",
+                Color::Green,
+                Color::White
+            ),
+            Mode::Explore(_) => (
+                "Search (Press '/' to activate)",
+                Color::Yellow,
+                Color::DarkGray
+            )
         };
 
         let block = Block::default()
-            .title("Search")
+            .title(title)
             .borders(Borders::ALL)
-            .border_style(style);
+            .border_style(Style::default().fg(border_color));
 
         let search_text = if state.search_query.is_empty() {
-            "Press '/' to search..."
+            match mode {
+                Mode::Search(_) => "Type to search...",
+                Mode::Explore(_) => "Press '/' to search..."
+            }
         } else {
             &state.search_query
         };
 
         let paragraph = Paragraph::new(search_text)
             .block(block)
-            .style(style);
+            .style(Style::default().fg(text_color));
 
         frame.render_widget(paragraph, area);
     }
@@ -174,13 +184,13 @@ impl UI {
     }
 
     /// Complete UI render function that combines all components
-    pub fn render_complete_ui(frame: &mut Frame, state: &AppState) {
+    pub fn render_complete_ui(frame: &mut Frame, state: &AppState, mode: &Mode) {
         let area = frame.area();
         let (file_list_area, description_area, search_area) = Self::create_main_layout(area);
 
         // Render all components using state data
         Self::render_file_list(frame, file_list_area, state);
         Self::render_file_description(frame, description_area, state);
-        Self::render_search_bar(frame, search_area, state);
+        Self::render_search_bar(frame, search_area, state, mode);
     }
 }
