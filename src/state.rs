@@ -37,6 +37,7 @@ impl AppState {
 
     pub fn refresh_files(&mut self) {
         self.files.clear();
+        self.clear_search_query();
         
         if let Ok(entries) = fs::read_dir(&self.current_dir) {
             for entry in entries.flatten() {
