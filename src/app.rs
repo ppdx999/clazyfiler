@@ -1,4 +1,5 @@
 use crossterm::event::{self, Event, KeyEvent};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
     actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
@@ -40,7 +41,34 @@ impl App {
             // Handle Mode Switch
             Action::SwitchMode(switch_action) =>
                 self.mode.switch_to(switch_action, &mut self.state),
-            // Hnadle mode specific action dispatch
+            // Handle file opening (requires special terminal handling)
+            Action::OpenFile => {
+                if let Some(selected) = self.state.get_selected_file() {
+                    if !selected.is_directory {
+                        // Disable raw mode before launching vim
+                        disable_raw_mode().map_err(|e| format!("Failed to disable raw mode: {}", e))?;
+                        
+                        let result = self.state.open_file_with_vim(selected);
+                        
+                        // Re-enable raw mode after vim exits
+                        enable_raw_mode().map_err(|e| format!("Failed to re-enable raw mode: {}", e))?;
+                        
+                        match result {
+                            Ok(_) => {
+                                // Refresh files after returning from vim in case file was modified
+                                self.state.refresh_files();
+                                Ok(())
+                            },
+                            Err(e) => Err(e)
+                        }
+                    } else {
+                        Err("Cannot open directory with vim".to_string())
+                    }
+                } else {
+                    Err("No file selected".to_string())
+                }
+            },
+            // Handle mode specific action dispatch
             _ => self.mode.dispatch(action, &mut self.state)
         }
     }

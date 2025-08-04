@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use std::io::Read;
+use std::process::Command;
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -335,6 +336,50 @@ impl AppState {
             format!("{} {}", size, UNITS[unit_index])
         } else {
             format!("{:.1} {}", size_f, UNITS[unit_index])
+        }
+    }
+
+    /// Open file with vim editor
+    pub fn open_file_with_vim(&self, file: &FileEntry) -> Result<(), String> {
+        if file.is_directory {
+            return Err("Cannot open directory with vim".to_string());
+        }
+
+        // Check if vim is available
+        let vim_check = Command::new("which")
+            .arg("vim")
+            .output();
+
+        let editor = match vim_check {
+            Ok(output) if output.status.success() => "vim",
+            _ => {
+                // Fallback to vi if vim is not available
+                let vi_check = Command::new("which")
+                    .arg("vi")
+                    .output();
+                
+                match vi_check {
+                    Ok(output) if output.status.success() => "vi",
+                    _ => return Err("Neither vim nor vi is available on this system".to_string()),
+                }
+            }
+        };
+
+        // Execute vim with the file path
+        let result = Command::new(editor)
+            .arg(&file.path)
+            .status();
+
+        match result {
+            Ok(status) => {
+                if status.success() {
+                    // Refresh files after vim closes in case the file was modified
+                    Ok(())
+                } else {
+                    Err(format!("Editor exited with non-zero status: {}", status))
+                }
+            }
+            Err(e) => Err(format!("Failed to launch {}: {}", editor, e))
         }
     }
 

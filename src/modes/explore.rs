@@ -7,22 +7,55 @@ pub struct ExploreMode {
 }
 
 impl ModeBehavior for ExploreMode {
-    fn handle_key(&self, key: KeyEvent, _state: &AppState) -> Vec<Action> {
+    fn handle_key(&self, key: KeyEvent, state: &AppState) -> Vec<Action> {
         match key.code {
             // Vim-style navigation
             KeyCode::Char('j') => vec![Action::MoveDown],
             KeyCode::Char('k') => vec![Action::MoveUp],
             KeyCode::Char('h') => vec![Action::Back],
-            KeyCode::Char('l') => vec![Action::Select],
+            KeyCode::Char('l') => {
+                // Smart selection: directory navigation or file opening
+                if let Some(selected) = state.get_selected_file() {
+                    if selected.is_directory {
+                        vec![Action::Select]
+                    } else {
+                        vec![Action::OpenFile]
+                    }
+                } else {
+                    vec![Action::Select]
+                }
+            },
             
             // Arrow key navigation
             KeyCode::Down => vec![Action::MoveDown],
             KeyCode::Up => vec![Action::MoveUp],
             KeyCode::Left => vec![Action::Back],
-            KeyCode::Right => vec![Action::Select],
+            KeyCode::Right => {
+                // Smart selection: directory navigation or file opening
+                if let Some(selected) = state.get_selected_file() {
+                    if selected.is_directory {
+                        vec![Action::Select]
+                    } else {
+                        vec![Action::OpenFile]
+                    }
+                } else {
+                    vec![Action::Select]
+                }
+            },
             
             // Other common actions
-            KeyCode::Enter => vec![Action::Select],
+            KeyCode::Enter => {
+                // Smart selection: directory navigation or file opening
+                if let Some(selected) = state.get_selected_file() {
+                    if selected.is_directory {
+                        vec![Action::Select]
+                    } else {
+                        vec![Action::OpenFile]
+                    }
+                } else {
+                    vec![Action::Select]
+                }
+            },
             KeyCode::Esc => vec![Action::Back],
             KeyCode::Char('r') => vec![Action::Refresh],
             KeyCode::F(5) => vec![Action::Refresh],
@@ -43,13 +76,13 @@ impl ModeBehavior for ExploreMode {
                 Ok(())
             },
             Action::Select => {
-                // Try to enter directory or open file
+                // Select action is now only for directories
                 if let Some(selected) = state.get_selected_file() {
                     if selected.is_directory {
                         state.enter_directory()
                     } else {
-                        // For now, just indicate file selection - could open file in future
-                        Ok(())
+                        // This shouldn't happen with new smart selection logic
+                        Err("Select action called on file (this is a bug)".to_string())
                     }
                 } else {
                     Ok(())

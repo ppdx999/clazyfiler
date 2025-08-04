@@ -7,6 +7,7 @@ pub enum Action {
     MoveLeft,
     MoveRight,
     Select,
+    OpenFile,      // Open file with external editor (vim)
     Back,
     Refresh,
     SwitchMode(ModeSwitchAction),
