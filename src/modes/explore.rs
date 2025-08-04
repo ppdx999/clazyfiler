@@ -98,21 +98,6 @@ impl ModeBehavior for ExploreMode {
             _ => Ok(()),
         }
     }
-    fn render(&self, _frame: &mut ratatui::Frame, _state: &AppState) {
-        // In explore mode, render UI with current state
-        // Note: This is now handled by Mode::render_with_mode_context
-        // Individual modes no longer call UI directly
-    }
-    
-    fn on_enter(&mut self, _state: &mut AppState) -> Result<(), String> {
-        // When entering explore mode, ensure search is disabled
-        Ok(())
-    }
-    
-    fn on_exit(&mut self, _state: &mut AppState) -> Result<(), String> {
-        // No specific cleanup needed when exiting explore mode
-        Ok(())
-    }
 }
 
 

@@ -1,5 +1,5 @@
 use crossterm::event::{self, Event, KeyEvent};
-use ratatui::{prelude::Backend, Frame, Terminal};
+use ratatui::{prelude::Backend, Terminal};
 use crate::{
     actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState, terminal::TerminalExt
 };
@@ -12,18 +12,11 @@ pub struct App<B: Backend> {
 
 impl<B: Backend> App<B> {
     pub fn new(terminal: Terminal<B>) -> Self {
-        let mut app = Self {
+        Self {
             mode: Mode::new_explore_mode(),
             state: AppState::new(),
             terminal,
-        };
-        
-        // Call on_enter for the initial mode
-        if let Err(e) = app.mode.on_enter(&mut app.state) {
-            eprintln!("Error initializing mode: {}", e);
         }
-        
-        app
     }
 
     pub fn handle_key(&self, key: KeyEvent) -> Vec<Action> {
@@ -76,12 +69,6 @@ impl<B: Backend> App<B> {
         }
     }
 
-    pub fn render(&self, frame: &mut Frame) {
-        // Handle global rendering
-
-        // Handle mode specific rendering with mode context
-        return self.mode.render_with_mode_context(frame, &self.state);
-    }
 
     /// Draw the current state to the terminal
     pub fn draw(&mut self) -> Result<(), Box<dyn std::error::Error>> {

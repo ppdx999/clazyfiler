@@ -28,27 +28,6 @@ impl ModeBehavior for Mode {
         }
     }
 
-    /// Render current mode - delegates without ModeManager overhead
-    fn render(&self, frame: &mut Frame, state: &AppState) {
-        match self {
-            Mode::Explore(explore_mode) => explore_mode.render(frame, state),
-            Mode::Search(search_mode) => search_mode.render(frame, state)
-        }
-    }
-    
-    fn on_enter(&mut self, state: &mut AppState) -> Result<(), String> {
-        match self {
-            Mode::Explore(explore_mode) => explore_mode.on_enter(state),
-            Mode::Search(search_mode) => search_mode.on_enter(state)
-        }
-    }
-    
-    fn on_exit(&mut self, state: &mut AppState) -> Result<(), String> {
-        match self {
-            Mode::Explore(explore_mode) => explore_mode.on_exit(state),
-            Mode::Search(search_mode) => search_mode.on_exit(state)
-        }
-    }
 }
 
 
@@ -67,19 +46,13 @@ impl Mode {
         UI::render_complete_ui(frame, state, self);
     }
     
-    /// Switch from current mode to a new mode, calling on_exit and on_enter appropriately
-    pub fn switch_to(&mut self, switch_action: ModeSwitchAction, state: &mut AppState) -> Result<(), String> {
-        // Call on_exit for current mode
-        self.on_exit(state)?;
-        
+    /// Switch from current mode to a new mode
+    pub fn switch_to(&mut self, switch_action: ModeSwitchAction, _state: &mut AppState) -> Result<(), String> {
         // Replace current mode with new mode
         *self = match switch_action {
             ModeSwitchAction::EnterExploreMode => Self::new_explore_mode(),
             ModeSwitchAction::EnterSearchMode => Self::new_search_mode(),
         };
-        
-        // Call on_enter for new mode
-        self.on_enter(state)?;
         
         Ok(())
     }

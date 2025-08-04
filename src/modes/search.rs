@@ -78,21 +78,6 @@ impl ModeBehavior for SearchMode {
             _ => Ok(())
         }
     }
-    fn render(&self, _frame: &mut ratatui::Frame, _state: &AppState) {
-        // In search mode, render UI with current state (search will be active in state)
-        // Note: This is now handled by Mode::render_with_mode_context
-        // Individual modes no longer call UI directly
-    }
-    
-    fn on_enter(&mut self, _state: &mut AppState) -> Result<(), String> {
-        // When entering search mode, activate search if not already active
-        Ok(())
-    }
-    
-    fn on_exit(&mut self, _state: &mut AppState) -> Result<(), String> {
-        // When exiting search mode, clear search state
-        Ok(())
-    }
 }
 
 impl SearchMode {
