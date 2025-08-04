@@ -1,101 +1,61 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::{Action, ModeSwitchAction}, modes::interface::ModeBehavior, state::AppState};
+use crate::{actions::ModeSwitchAction, modes::interface::{ModeBehavior, ModeResult}, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreMode {
 }
 
 impl ModeBehavior for ExploreMode {
-    fn handle_key(&self, key: KeyEvent, state: &AppState) -> Vec<Action> {
+    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
         match key.code {
-            // Vim-style navigation
-            KeyCode::Char('j') => vec![Action::MoveDown],
-            KeyCode::Char('k') => vec![Action::MoveUp],
-            KeyCode::Char('h') => vec![Action::Back],
-            KeyCode::Char('l') => {
-                // Smart selection: directory navigation or file opening
-                if let Some(selected) = state.get_selected_file() {
-                    if selected.is_directory {
-                        vec![Action::Select]
-                    } else {
-                        vec![Action::OpenFile]
-                    }
-                } else {
-                    vec![Action::Select]
-                }
-            },
-            
-            // Arrow key navigation
-            KeyCode::Down => vec![Action::MoveDown],
-            KeyCode::Up => vec![Action::MoveUp],
-            KeyCode::Left => vec![Action::Back],
-            KeyCode::Right => {
-                // Smart selection: directory navigation or file opening
-                if let Some(selected) = state.get_selected_file() {
-                    if selected.is_directory {
-                        vec![Action::Select]
-                    } else {
-                        vec![Action::OpenFile]
-                    }
-                } else {
-                    vec![Action::Select]
-                }
-            },
-            
-            // Other common actions
-            KeyCode::Enter => {
-                // Smart selection: directory navigation or file opening
-                if let Some(selected) = state.get_selected_file() {
-                    if selected.is_directory {
-                        vec![Action::Select]
-                    } else {
-                        vec![Action::OpenFile]
-                    }
-                } else {
-                    vec![Action::Select]
-                }
-            },
-            KeyCode::Esc => vec![Action::Back],
-            KeyCode::Char('r') => vec![Action::Refresh],
-            KeyCode::F(5) => vec![Action::Refresh],
-            KeyCode::Char('/') => vec![Action::SwitchMode(ModeSwitchAction::EnterSearchMode)],
-            KeyCode::Char('q') => vec![Action::Quit],
-            
-            _ => vec![],
-        }
-    }
-    fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
-        match action {
-            Action::MoveUp => {
-                state.move_selection_up();
-                Ok(())
-            },
-            Action::MoveDown => {
+            // Navigation keys - handle directly
+            KeyCode::Char('j') | KeyCode::Down => {
                 state.move_selection_down();
-                Ok(())
+                ModeResult::none()
             },
-            Action::Select => {
-                // Select action is now only for directories
+            KeyCode::Char('k') | KeyCode::Up => {
+                state.move_selection_up();
+                ModeResult::none()
+            },
+            
+            // Directory navigation
+            KeyCode::Char('h') | KeyCode::Left | KeyCode::Esc => {
+                if let Err(e) = state.go_to_parent() {
+                    eprintln!("Navigation error: {}", e);
+                }
+                ModeResult::none()
+            },
+            
+            // Smart selection: directory navigation or file opening
+            KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter => {
                 if let Some(selected) = state.get_selected_file() {
                     if selected.is_directory {
-                        state.enter_directory().map_err(|e| e.to_string())
+                        // Navigate into directory
+                        if let Err(e) = state.enter_directory() {
+                            eprintln!("Navigation error: {}", e);
+                        }
+                        ModeResult::none()
                     } else {
-                        // This shouldn't happen with new smart selection logic
-                        Err("Select action called on file (this is a bug)".to_string())
+                        // Open file - this needs App-level handling
+                        ModeResult::open_file()
                     }
                 } else {
-                    Ok(())
+                    ModeResult::none()
                 }
             },
-            Action::Back => {
-                state.go_to_parent().map_err(|e| e.to_string())
-            },
-            Action::Refresh => {
+            
+            // Refresh
+            KeyCode::Char('r') | KeyCode::F(5) => {
                 state.refresh_files();
-                Ok(())
+                ModeResult::none()
             },
-            _ => Ok(()),
+            
+            // Global actions
+            KeyCode::Char('/') => ModeResult::switch_mode(ModeSwitchAction::EnterSearchMode),
+            KeyCode::Char('q') => ModeResult::quit(),
+            
+            _ => ModeResult::none(),
         }
     }
 }

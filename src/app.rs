@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Terminal};
 use crate::{
-    actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState, terminal::TerminalExt
+    key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState, terminal::TerminalExt
 };
     
 pub struct App<B: Backend> {
@@ -19,27 +19,31 @@ impl<B: Backend> App<B> {
         }
     }
 
-    pub fn handle_key(&self, key: KeyEvent) -> Vec<Action> {
+    pub fn handle_key(&mut self, key: KeyEvent) -> crate::modes::interface::ModeResult {
         // Handle global key event
         if is_ctrl_c(&key) {
-            return vec![Action::Quit]
+            return crate::modes::interface::ModeResult::quit()
         }
 
         // Handle mode specific key event
-        return self.mode.handle_key(key, &self.state)
+        return self.mode.handle_key(key, &mut self.state)
     }
 
-    pub fn dispatch(&mut self, action: Action) -> Result<(), String> {
-        // Handle global action dispatch
-        match action {
-            // Handle Mode Switch
-            Action::SwitchMode(switch_action) =>
-                self.mode.switch_to(switch_action, &mut self.state),
-            // Handle file opening (requires special terminal handling)
-            Action::OpenFile => self.open_file_with_vim(),
-            // Handle mode specific action dispatch
-            _ => self.mode.dispatch(action, &mut self.state)
+    /// Handle the result from key processing
+    fn handle_mode_result(&mut self, result: crate::modes::interface::ModeResult) -> Result<bool, String> {
+        if result.quit {
+            return Ok(true); // Signal to quit
         }
+        
+        if result.open_file {
+            self.open_file_with_vim()?;
+        }
+        
+        if let Some(switch_action) = result.switch_mode {
+            self.mode.switch_to(switch_action, &mut self.state)?;
+        }
+        
+        Ok(false) // Continue running
     }
 
     /// Open the selected file with vim, delegating terminal complexity to terminal layer
@@ -90,20 +94,17 @@ impl<B: Backend> App<B> {
                 continue;
             };
 
-            let actions = self.handle_key(key);
+            let result = self.handle_key(key);
             
-            if actions.is_empty() {
-                continue;
-            }
-
-            // Process all actions
-            for action in actions {
-                if let Action::Quit = &action {
-                    return Ok(());
-                }
-
-                if let Err(e) = self.dispatch(action) {
-                    eprintln!("Action error: {}", e);
+            // Handle the result
+            match self.handle_mode_result(result) {
+                Ok(should_quit) => {
+                    if should_quit {
+                        return Ok(());
+                    }
+                },
+                Err(e) => {
+                    eprintln!("Error: {}", e);
                 }
             }
         }

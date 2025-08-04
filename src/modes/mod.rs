@@ -2,7 +2,7 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{actions::{Action, ModeSwitchAction}, modes::{explore::ExploreMode, interface::ModeBehavior, search::SearchMode}, state::AppState};
+use crate::{actions::ModeSwitchAction, modes::{explore::ExploreMode, interface::{ModeBehavior, ModeResult}, search::SearchMode}, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
@@ -13,21 +13,13 @@ pub enum Mode {
 }
 
 impl ModeBehavior for Mode {
-    /// Handle keyboard input - delegates to current mode without pattern matching hell
-    fn handle_key(&self, key: KeyEvent, state: &AppState) -> Vec<Action> {
+    /// Handle keyboard input - delegates to current mode
+    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
         match self {
-            Mode::Explore(explor_mode) => explor_mode.handle_key(key, state),
+            Mode::Explore(explore_mode) => explore_mode.handle_key(key, state),
             Mode::Search(search_mode) => search_mode.handle_key(key, state)
         }
     }
-
-    fn dispatch(&mut self, action: Action, state: &mut AppState) -> Result<(), String> {
-        match self {
-            Mode::Explore(explore_mode) => explore_mode.dispatch(action, state),
-            Mode::Search(search_mode) => search_mode.dispatch(action, state)
-        }
-    }
-
 }
 
 
