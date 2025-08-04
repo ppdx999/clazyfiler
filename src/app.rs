@@ -1,11 +1,7 @@
-use std::io;
-
 use crossterm::event::{self, Event, KeyEvent};
-use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
-    actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
+    actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState, terminal::TerminalExt
 };
     
 pub struct App<B: Backend> {
@@ -53,7 +49,7 @@ impl<B: Backend> App<B> {
         }
     }
 
-    /// Open the selected file with vim, handling all terminal complexity internally
+    /// Open the selected file with vim, delegating terminal complexity to terminal layer
     fn open_file_with_vim(&mut self) -> Result<(), String> {
         let Some(selected) = self.state.get_selected_file() else {
             return Err("No file selected".to_string())
@@ -62,20 +58,10 @@ impl<B: Backend> App<B> {
             return Err("Cannot open directory with vim".to_string())
         };
 
-        // Save terminal state and switch to normal mode
-        let mut stdout = io::stdout();
-        execute!(stdout, LeaveAlternateScreen).map_err(|e| format!("Failed to leave alternate screen: {}", e))?;
-        disable_raw_mode().map_err(|e| format!("Failed to disable raw mode: {}", e))?;
-
-        // Launch vim
-        let result = self.state.open_file_with_vim(selected);
-
-        // Restore terminal state and switch back to TUI mode
-        execute!(stdout, EnterAlternateScreen).map_err(|e| format!("Failed to enter alternate screen: {}", e))?;
-        enable_raw_mode().map_err(|e| format!("Failed to re-enable raw mode: {}", e))?;
-        
-        // Clear terminal and refresh after returning from vim
-        self.terminal.clear().map_err(|e| format!("Failed to clear terminal: {}", e))?;
+        // Use terminal's suspend/resume functionality to handle all terminal complexity
+        let result = self.terminal.with_suspended_terminal(|| {
+            self.state.open_file_with_vim(selected).map_err(|e| e.into())
+        });
 
         match result {
             Ok(_) => {
@@ -83,7 +69,7 @@ impl<B: Backend> App<B> {
                 self.state.refresh_files();
                 Ok(())
             },
-            Err(e) => Err(e)
+            Err(e) => Err(format!("Failed to open file with vim: {}", e))
         }
     }
 

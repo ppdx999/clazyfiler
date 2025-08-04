@@ -101,3 +101,57 @@ where
     
     result
 }
+
+/// Extension trait for Terminal to handle suspend/resume operations for external commands
+pub trait TerminalExt {
+    /// Suspend the TUI terminal state to run an external command
+    fn suspend_for_external_command(&mut self) -> Result<(), Box<dyn std::error::Error>>;
+    
+    /// Resume the TUI terminal state after external command finishes
+    fn resume_from_external_command(&mut self) -> Result<(), Box<dyn std::error::Error>>;
+    
+    /// Execute a closure with suspended terminal (convenience method)
+    fn with_suspended_terminal<F, R>(&mut self, f: F) -> Result<R, Box<dyn std::error::Error>>
+    where
+        F: FnOnce() -> Result<R, Box<dyn std::error::Error>>;
+}
+
+impl<B: ratatui::backend::Backend> TerminalExt for Terminal<B> 
+where B: ratatui::backend::Backend,
+{
+    fn suspend_for_external_command(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // Leave alternate screen and disable raw mode for external command
+        let mut stdout = io::stdout();
+        execute!(stdout, LeaveAlternateScreen)?;
+        disable_raw_mode()?;
+        Ok(())
+    }
+    
+    fn resume_from_external_command(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // Re-enter alternate screen and enable raw mode
+        let mut stdout = io::stdout();
+        execute!(stdout, EnterAlternateScreen)?;
+        enable_raw_mode()?;
+        
+        // Clear terminal to remove any artifacts from external command
+        self.clear()?;
+        Ok(())
+    }
+    
+    fn with_suspended_terminal<F, R>(&mut self, f: F) -> Result<R, Box<dyn std::error::Error>>
+    where
+        F: FnOnce() -> Result<R, Box<dyn std::error::Error>>
+    {
+        // Suspend terminal
+        self.suspend_for_external_command()?;
+        
+        // Execute the function
+        let result = f();
+        
+        // Resume terminal (even if function failed)
+        self.resume_from_external_command()?;
+        
+        // Return the original result
+        result
+    }
+}
