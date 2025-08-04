@@ -4,8 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::{modes::Mode, state::{AppState, FileEntry}};
-use std::time::UNIX_EPOCH;
+use crate::{modes::Mode, state::AppState};
 
 pub struct UI;
 
@@ -51,16 +50,22 @@ impl UI {
 
     /// Render the file description component on the right side
     pub fn render_file_description(frame: &mut Frame, area: Rect, state: &AppState) {
+        let (title, content) = if let Some(selected_file) = state.get_selected_file() {
+            let title = if selected_file.is_directory {
+                format!("📁 {}", selected_file.name)
+            } else {
+                format!("📄 {}", selected_file.name)
+            };
+            let content = state.read_file_content(selected_file);
+            (title, content)
+        } else {
+            ("No Selection".to_string(), "No file or directory selected".to_string())
+        };
+
         let block = Block::default()
-            .title("File Info")
+            .title(title)
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White));
-
-        let content = if let Some(selected_file) = state.get_selected_file() {
-            Self::format_file_info(selected_file)
-        } else {
-            "No file selected".to_string()
-        };
 
         let paragraph = Paragraph::new(content)
             .block(block)
@@ -69,60 +74,6 @@ impl UI {
         frame.render_widget(paragraph, area);
     }
 
-    fn format_file_info(file: &FileEntry) -> String {
-        let file_type = if file.is_directory {
-            "Directory"
-        } else {
-            "File"
-        };
-
-        let size_str = if let Some(size) = file.size {
-            Self::format_file_size(size)
-        } else {
-            "N/A".to_string()
-        };
-
-        let modified_str = if let Some(modified) = file.modified {
-            if let Ok(duration) = modified.duration_since(UNIX_EPOCH) {
-                let secs = duration.as_secs();
-                let datetime = chrono::DateTime::from_timestamp(secs as i64, 0)
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                    .unwrap_or_else(|| "Unknown".to_string());
-                datetime
-            } else {
-                "Unknown".to_string()
-            }
-        } else {
-            "Unknown".to_string()
-        };
-
-        format!(
-            "Name: {}\n\nPath: {}\n\nType: {}\n\nSize: {}\n\nModified: {}\n\nFull Path:\n{}",
-            file.name,
-            file.path.parent().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string()),
-            file_type,
-            size_str,
-            modified_str,
-            file.path.display()
-        )
-    }
-
-    fn format_file_size(size: u64) -> String {
-        const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
-        let mut size_f = size as f64;
-        let mut unit_index = 0;
-
-        while size_f >= 1024.0 && unit_index < UNITS.len() - 1 {
-            size_f /= 1024.0;
-            unit_index += 1;
-        }
-
-        if unit_index == 0 {
-            format!("{} {}", size, UNITS[unit_index])
-        } else {
-            format!("{:.1} {}", size_f, UNITS[unit_index])
-        }
-    }
 
     /// Render the search bar component at the bottom
     pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState, mode: &Mode) {

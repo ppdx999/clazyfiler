@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
+use std::io::Read;
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -183,6 +184,158 @@ impl AppState {
         // Delete to end of line (Ctrl+K) - in search, this is same as clear
         self.search_query.clear();
         self.update_filtered_files();
+    }
+
+    /// Read file content for display in the right panel
+    pub fn read_file_content(&self, file: &FileEntry) -> String {
+        if file.is_directory {
+            self.list_directory_children(file)
+        } else {
+            self.read_text_file_content(file)
+        }
+    }
+
+    /// Read text content from a file with size and binary detection
+    fn read_text_file_content(&self, file: &FileEntry) -> String {
+        const MAX_FILE_SIZE: u64 = 1024 * 1024; // 1MB limit
+        const MAX_PREVIEW_LINES: usize = 100;
+
+        // Check file size
+        if let Some(size) = file.size {
+            if size > MAX_FILE_SIZE {
+                return format!(
+                    "📄 File too large to preview\n\nSize: {}\nPath: {}\n\nUse external editor to view this file.",
+                    self.format_file_size(size),
+                    file.path.display()
+                );
+            }
+        }
+
+        match fs::File::open(&file.path) {
+            Ok(mut file_handle) => {
+                let mut buffer = Vec::new();
+                
+                // Read the file
+                match file_handle.read_to_end(&mut buffer) {
+                    Ok(_) => {
+                        // Check if file contains binary data
+                        if buffer.iter().any(|&b| b == 0 || (b < 32 && b != b'\n' && b != b'\r' && b != b'\t')) {
+                            format!(
+                                "🔧 Binary file detected\n\nSize: {} bytes\nPath: {}\n\nThis appears to be a binary file and cannot be displayed as text.",
+                                buffer.len(),
+                                file.path.display()
+                            )
+                        } else {
+                            // Convert to string and limit lines
+                            match String::from_utf8(buffer) {
+                                Ok(content) => {
+                                    let lines: Vec<&str> = content.lines().collect();
+                                    if lines.len() > MAX_PREVIEW_LINES {
+                                        format!(
+                                            "📝 Text File Preview (first {} lines)\n\n{}\n\n... ({} more lines)",
+                                            MAX_PREVIEW_LINES,
+                                            lines[..MAX_PREVIEW_LINES].join("\n"),
+                                            lines.len() - MAX_PREVIEW_LINES
+                                        )
+                                    } else {
+                                        format!("📝 Text File Content\n\n{}", content)
+                                    }
+                                },
+                                Err(_) => format!(
+                                    "⚠️ Invalid UTF-8 encoding\n\nPath: {}\n\nFile contains non-UTF-8 data and cannot be displayed.",
+                                    file.path.display()
+                                )
+                            }
+                        }
+                    },
+                    Err(e) => format!(
+                        "❌ Failed to read file\n\nPath: {}\nError: {}\n\nCheck file permissions and try again.",
+                        file.path.display(),
+                        e
+                    )
+                }
+            },
+            Err(e) => format!(
+                "❌ Failed to open file\n\nPath: {}\nError: {}\n\nCheck if file exists and you have read permissions.",
+                file.path.display(),
+                e
+            )
+        }
+    }
+
+    /// List directory children for display in the right panel
+    fn list_directory_children(&self, dir: &FileEntry) -> String {
+        match fs::read_dir(&dir.path) {
+            Ok(entries) => {
+                let mut children: Vec<FileEntry> = Vec::new();
+                
+                for entry in entries.flatten() {
+                    if let Ok(metadata) = entry.metadata() {
+                        children.push(FileEntry {
+                            name: entry.file_name().to_string_lossy().to_string(),
+                            path: entry.path(),
+                            is_directory: metadata.is_dir(),
+                            size: if metadata.is_file() { Some(metadata.len()) } else { None },
+                            modified: metadata.modified().ok(),
+                        });
+                    }
+                }
+
+                // Sort: directories first, then files, both alphabetically
+                children.sort_by(|a, b| {
+                    match (a.is_directory, b.is_directory) {
+                        (true, false) => std::cmp::Ordering::Less,
+                        (false, true) => std::cmp::Ordering::Greater,
+                        _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                    }
+                });
+
+                if children.is_empty() {
+                    format!("📁 Directory Contents\n\n(Empty directory)")
+                } else {
+                    let mut content = format!("📁 Directory Contents ({} items)\n\n", children.len());
+                    
+                    for child in children.iter().take(50) { // Limit to 50 items for display
+                        let icon = if child.is_directory { "📁" } else { "📄" };
+                        let size_str = if let Some(size) = child.size {
+                            format!(" ({})", self.format_file_size(size))
+                        } else {
+                            String::new()
+                        };
+                        content.push_str(&format!("{} {}{}\n", icon, child.name, size_str));
+                    }
+                    
+                    if children.len() > 50 {
+                        content.push_str(&format!("\n... and {} more items", children.len() - 50));
+                    }
+                    
+                    content
+                }
+            },
+            Err(e) => format!(
+                "❌ Failed to read directory\n\nPath: {}\nError: {}\n\nCheck directory permissions.",
+                dir.path.display(),
+                e
+            )
+        }
+    }
+
+    /// Format file size helper (moved from UI)
+    fn format_file_size(&self, size: u64) -> String {
+        const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+        let mut size_f = size as f64;
+        let mut unit_index = 0;
+
+        while size_f >= 1024.0 && unit_index < UNITS.len() - 1 {
+            size_f /= 1024.0;
+            unit_index += 1;
+        }
+
+        if unit_index == 0 {
+            format!("{} {}", size, UNITS[unit_index])
+        } else {
+            format!("{:.1} {}", size_f, UNITS[unit_index])
+        }
     }
 
 }

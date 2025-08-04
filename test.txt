@@ -1,0 +1,11 @@
+Hello, this is a test file!
+
+This content should appear in the right panel when selected.
+
+Features:
+- File content display
+- Directory listing
+- Binary file detection
+- Large file handling
+
+End of test file.
