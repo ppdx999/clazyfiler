@@ -1,5 +1,8 @@
+use std::io;
+
 use crossterm::event::{self, Event, KeyEvent};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::execute;
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::{prelude::Backend, Frame, Terminal};
 use crate::{
     actions::{Action}, key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState
@@ -43,29 +46,31 @@ impl App {
                 self.mode.switch_to(switch_action, &mut self.state),
             // Handle file opening (requires special terminal handling)
             Action::OpenFile => {
-                if let Some(selected) = self.state.get_selected_file() {
-                    if !selected.is_directory {
-                        // Disable raw mode before launching vim
-                        disable_raw_mode().map_err(|e| format!("Failed to disable raw mode: {}", e))?;
-                        
-                        let result = self.state.open_file_with_vim(selected);
-                        
-                        // Re-enable raw mode after vim exits
-                        enable_raw_mode().map_err(|e| format!("Failed to re-enable raw mode: {}", e))?;
-                        
-                        match result {
-                            Ok(_) => {
-                                // Refresh files after returning from vim in case file was modified
-                                self.state.refresh_files();
-                                Ok(())
-                            },
-                            Err(e) => Err(e)
-                        }
-                    } else {
-                        Err("Cannot open directory with vim".to_string())
-                    }
-                } else {
-                    Err("No file selected".to_string())
+                let Some(selected) = self.state.get_selected_file() else {
+                    return Err("No file selected".to_string())
+                };
+                if selected.is_directory {
+                    return Err("Cannot open directory with vim".to_string())
+                };
+
+                let mut stdout = io::stdout();
+                // Disable raw mode before launching vim
+                execute!(stdout, LeaveAlternateScreen).map_err(|e| format!("Fail to LeaveAlternateScreen: {}", e))?;
+                disable_raw_mode().map_err(|e| format!("Failed to disable raw mode: {}", e))?;
+
+                let result = self.state.open_file_with_vim(selected);
+
+                // Re-enable raw mode after vim exits
+                execute!(stdout, EnterAlternateScreen).map_err(|e| format!("Fail to EnterAlternateScreen: {}", e))?;
+                enable_raw_mode().map_err(|e| format!("Failed to re-enable raw mode: {}", e))?;
+
+                match result {
+                    Ok(_) => {
+                        // Refresh files after returning from vim in case file was modified
+                        self.state.refresh_files();
+                        Ok(())
+                    },
+                    Err(e) => Err(e)
                 }
             },
             // Handle mode specific action dispatch
@@ -102,8 +107,18 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), Box<dyn std
                 return Ok(());
             }
 
-            if let Err(e) = app.dispatch(action) {
-                eprintln!("Action error: {}", e);
+            // Handle OpenFile action specially to clear terminal after
+            if let Action::OpenFile = &action {
+                if let Err(e) = app.dispatch(action) {
+                    eprintln!("Action error: {}", e);
+                } else {
+                    // Clear and redraw terminal after returning from vim
+                    terminal.clear()?;
+                }
+            } else {
+                if let Err(e) = app.dispatch(action) {
+                    eprintln!("Action error: {}", e);
+                }
             }
         }
     }
