@@ -81,13 +81,23 @@ impl Drop for TerminalManager {
 /// ```
 pub fn with_terminal<F, R>(f: F) -> Result<R, Box<dyn std::error::Error>>
 where
-    F: FnOnce(&mut Terminal<CrosstermBackend<Stdout>>) -> Result<R, Box<dyn std::error::Error>>,
+    F: FnOnce(Terminal<CrosstermBackend<Stdout>>) -> Result<R, Box<dyn std::error::Error>>,
 {
-    let mut term_manager = TerminalManager::new()?;
-    let result = f(term_manager.terminal());
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     
-    // Explicit cleanup before returning result
-    term_manager.cleanup()?;
+    let backend = CrosstermBackend::new(stdout);
+    let terminal = Terminal::new(backend)?;
+    
+    // Run the function with the terminal
+    let result = f(terminal);
+    
+    // Cleanup terminal state
+    disable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, LeaveAlternateScreen, DisableMouseCapture)?;
     
     result
 }
