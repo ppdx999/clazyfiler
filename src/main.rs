@@ -1,9 +1,11 @@
 mod actions;
 mod app;
+mod core;
 mod key;
 mod modes;
-mod terminal;
+mod services;
 mod state;
+mod terminal;
 mod ui;
 
 use crate::{app::run_app, terminal::with_terminal};

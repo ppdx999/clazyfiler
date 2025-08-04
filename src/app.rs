@@ -51,16 +51,19 @@ impl<B: Backend> App<B> {
 
     /// Open the selected file with vim, delegating terminal complexity to terminal layer
     fn open_file_with_vim(&mut self) -> Result<(), String> {
-        let Some(selected) = self.state.get_selected_file() else {
-            return Err("No file selected".to_string())
+        // Get the selected file info before borrowing
+        let selected_file = match self.state.get_selected_file() {
+            Some(file) => file.clone(), // Clone the FileEntry to avoid borrowing issues
+            None => return Err("No file selected".to_string()),
         };
-        if selected.is_directory {
+        
+        if selected_file.is_directory {
             return Err("Cannot open directory with vim".to_string())
         };
 
         // Use terminal's suspend/resume functionality to handle all terminal complexity
         let result = self.terminal.with_suspended_terminal(|| {
-            self.state.open_file_with_vim(selected).map_err(|e| e.into())
+            self.state.open_file_with_vim(&selected_file).map_err(|e| e.into())
         });
 
         match result {

@@ -11,7 +11,7 @@ pub struct UI;
 impl UI {
     /// Render the file list component on the left side
     pub fn render_file_list(frame: &mut Frame, area: Rect, state: &AppState) {
-        let title = format!("Files - {}", state.current_dir.display());
+        let title = format!("Files - {}", state.current_dir().display());
         let block = Block::default()
             .title(title)
             .borders(Borders::ALL)
@@ -42,7 +42,7 @@ impl UI {
         let selected_index = if state.filtered_files_len() == 0 {
             None
         } else {
-            Some(state.selected_index)
+            Some(state.selected_index())
         };
         
         frame.render_stateful_widget(list, area, &mut ratatui::widgets::ListState::default().with_selected(selected_index));
@@ -95,13 +95,13 @@ impl UI {
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color));
 
-        let search_text = if state.search_query.is_empty() {
+        let search_text = if state.search_query().is_empty() {
             match mode {
                 Mode::Search(_) => "Type to search...",
                 Mode::Explore(_) => "Press '/' to search..."
             }
         } else {
-            &state.search_query
+state.search_query()
         };
 
         let paragraph = Paragraph::new(search_text)

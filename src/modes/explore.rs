@@ -79,7 +79,7 @@ impl ModeBehavior for ExploreMode {
                 // Select action is now only for directories
                 if let Some(selected) = state.get_selected_file() {
                     if selected.is_directory {
-                        state.enter_directory()
+                        state.enter_directory().map_err(|e| e.to_string())
                     } else {
                         // This shouldn't happen with new smart selection logic
                         Err("Select action called on file (this is a bug)".to_string())
@@ -89,7 +89,7 @@ impl ModeBehavior for ExploreMode {
                 }
             },
             Action::Back => {
-                state.go_to_parent()
+                state.go_to_parent().map_err(|e| e.to_string())
             },
             Action::Refresh => {
                 state.refresh_files();
