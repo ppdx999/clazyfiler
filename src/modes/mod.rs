@@ -2,48 +2,48 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{actions::ModeSwitchAction, modes::{explore::ExploreMode, interface::{ModeBehavior, ModeResult}, search::SearchMode}, state::AppState};
+use crate::{actions::ModeSwitchAction, modes::{explore::ExploreHandler, interface::{KeyHandler, ModeResult}, search::SearchHandler}, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
 #[derive(Debug)]
-pub enum Mode {
-    Explore(ExploreMode),
-    Search(SearchMode),
+pub enum Handler {
+    Explore(ExploreHandler),
+    Search(SearchHandler),
 }
 
-impl ModeBehavior for Mode {
-    /// Handle keyboard input - delegates to current mode
+impl KeyHandler for Handler {
+    /// Handle keyboard input - delegates to current handler
     fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
         match self {
-            Mode::Explore(explore_mode) => explore_mode.handle_key(key, state),
-            Mode::Search(search_mode) => search_mode.handle_key(key, state)
+            Handler::Explore(explore_handler) => explore_handler.handle_key(key, state),
+            Handler::Search(search_handler) => search_handler.handle_key(key, state)
         }
     }
 }
 
 
-impl Mode {
-    pub fn new_explore_mode() -> Self {
-        Mode::Explore(ExploreMode::new())
+impl Handler {
+    pub fn new_explore_handler() -> Self {
+        Handler::Explore(ExploreHandler::new())
     }
     
-    pub fn new_search_mode() -> Self {
-        Mode::Search(SearchMode::new())
+    pub fn new_search_handler() -> Self {
+        Handler::Search(SearchHandler::new())
     }
     
-    /// Render with mode awareness - provides mode context to UI
-    pub fn render_with_mode_context(&self, frame: &mut Frame, state: &AppState) {
+    /// Render with handler awareness - provides handler context to UI
+    pub fn render_with_handler_context(&self, frame: &mut Frame, state: &AppState) {
         use crate::ui::UI;
         UI::render_complete_ui(frame, state, self);
     }
     
-    /// Switch from current mode to a new mode
+    /// Switch from current handler to a new handler
     pub fn switch_to(&mut self, switch_action: ModeSwitchAction, _state: &mut AppState) -> Result<(), String> {
-        // Replace current mode with new mode
+        // Replace current handler with new handler
         *self = match switch_action {
-            ModeSwitchAction::EnterExploreMode => Self::new_explore_mode(),
-            ModeSwitchAction::EnterSearchMode => Self::new_search_mode(),
+            ModeSwitchAction::EnterExploreMode => Self::new_explore_handler(),
+            ModeSwitchAction::EnterSearchMode => Self::new_search_handler(),
         };
         
         Ok(())

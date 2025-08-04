@@ -1,11 +1,11 @@
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Terminal};
 use crate::{
-    key::is_ctrl_c, modes::{interface::ModeBehavior, Mode}, state::AppState, terminal::TerminalExt
+    key::is_ctrl_c, modes::{interface::KeyHandler, Handler}, state::AppState, terminal::TerminalExt
 };
     
 pub struct App<B: Backend> {
-    pub mode: Mode,
+    pub handler: Handler,
     pub state: AppState,
     terminal: Terminal<B>,
 }
@@ -13,7 +13,7 @@ pub struct App<B: Backend> {
 impl<B: Backend> App<B> {
     pub fn new(terminal: Terminal<B>) -> Self {
         Self {
-            mode: Mode::new_explore_mode(),
+            handler: Handler::new_explore_handler(),
             state: AppState::new(),
             terminal,
         }
@@ -25,12 +25,17 @@ impl<B: Backend> App<B> {
             return crate::modes::interface::ModeResult::quit()
         }
 
-        // Handle mode specific key event
-        return self.mode.handle_key(key, &mut self.state)
+        // Handle handler specific key event
+        return self.handler.handle_key(key, &mut self.state)
     }
 
     /// Handle the result from key processing
     fn handle_mode_result(&mut self, result: crate::modes::interface::ModeResult) -> Result<bool, String> {
+        // Handle errors first
+        if let Some(error) = result.error {
+            return Err(error);
+        }
+        
         if result.quit {
             return Ok(true); // Signal to quit
         }
@@ -40,7 +45,7 @@ impl<B: Backend> App<B> {
         }
         
         if let Some(switch_action) = result.switch_mode {
-            self.mode.switch_to(switch_action, &mut self.state)?;
+            self.handler.switch_to(switch_action, &mut self.state)?;
         }
         
         Ok(false) // Continue running
@@ -77,8 +82,8 @@ impl<B: Backend> App<B> {
     /// Draw the current state to the terminal
     pub fn draw(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.terminal.draw(|f| {
-            // Handle global rendering and mode specific rendering with mode context
-            self.mode.render_with_mode_context(f, &self.state);
+            // Handle global rendering and handler specific rendering with handler context
+            self.handler.render_with_handler_context(f, &self.state);
         })?;
         Ok(())
     }

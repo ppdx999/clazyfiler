@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::{modes::Mode, state::AppState};
+use crate::{modes::Handler, state::AppState};
 
 pub struct UI;
 
@@ -76,14 +76,14 @@ impl UI {
 
 
     /// Render the search bar component at the bottom
-    pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState, mode: &Mode) {
-        let (title, border_color, text_color) = match mode {
-            Mode::Search(_) => (
+    pub fn render_search_bar(frame: &mut Frame, area: Rect, state: &AppState, handler: &Handler) {
+        let (title, border_color, text_color) = match handler {
+            Handler::Search(_) => (
                 "🔍 Search Mode (Active)",
                 Color::Green,
                 Color::White
             ),
-            Mode::Explore(_) => (
+            Handler::Explore(_) => (
                 "Search (Press '/' to activate)",
                 Color::Yellow,
                 Color::DarkGray
@@ -96,9 +96,9 @@ impl UI {
             .border_style(Style::default().fg(border_color));
 
         let search_text = if state.search_query().is_empty() {
-            match mode {
-                Mode::Search(_) => "Type to search...",
-                Mode::Explore(_) => "Press '/' to search..."
+            match handler {
+                Handler::Search(_) => "Type to search...",
+                Handler::Explore(_) => "Press '/' to search..."
             }
         } else {
 state.search_query()
@@ -135,13 +135,13 @@ state.search_query()
     }
 
     /// Complete UI render function that combines all components
-    pub fn render_complete_ui(frame: &mut Frame, state: &AppState, mode: &Mode) {
+    pub fn render_complete_ui(frame: &mut Frame, state: &AppState, handler: &Handler) {
         let area = frame.area();
         let (file_list_area, description_area, search_area) = Self::create_main_layout(area);
 
         // Render all components using state data
         Self::render_file_list(frame, file_list_area, state);
         Self::render_file_description(frame, description_area, state);
-        Self::render_search_bar(frame, search_area, state, mode);
+        Self::render_search_bar(frame, search_area, state, handler);
     }
 }

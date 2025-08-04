@@ -1,13 +1,13 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{actions::ModeSwitchAction, modes::interface::{ModeBehavior, ModeResult}, state::AppState};
+use crate::{actions::ModeSwitchAction, modes::interface::{KeyHandler, ModeResult}, state::AppState};
 
 #[derive(Debug)]
-pub struct SearchMode {
+pub struct SearchHandler {
 }
 
-impl ModeBehavior for SearchMode {
+impl KeyHandler for SearchHandler {
     fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
         match (key.code, key.modifiers) {
             // Exit actions
@@ -76,7 +76,7 @@ impl ModeBehavior for SearchMode {
     }
 }
 
-impl SearchMode {
+impl SearchHandler {
     pub fn new() -> Self {
         Self {
         }

@@ -1,12 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::ModeSwitchAction, modes::interface::{ModeBehavior, ModeResult}, state::AppState};
+use crate::{actions::ModeSwitchAction, modes::interface::{KeyHandler, ModeResult}, state::AppState};
 
 #[derive(Debug)]
-pub struct ExploreMode {
+pub struct ExploreHandler {
 }
 
-impl ModeBehavior for ExploreMode {
+impl KeyHandler for ExploreHandler {
     fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
         match key.code {
             // Navigation keys - handle directly
@@ -21,10 +21,10 @@ impl ModeBehavior for ExploreMode {
             
             // Directory navigation
             KeyCode::Char('h') | KeyCode::Left | KeyCode::Esc => {
-                if let Err(e) = state.go_to_parent() {
-                    eprintln!("Navigation error: {}", e);
+                match state.go_to_parent() {
+                    Ok(_) => ModeResult::none(),
+                    Err(e) => ModeResult::error(format!("Navigation error: {}", e)),
                 }
-                ModeResult::none()
             },
             
             // Smart selection: directory navigation or file opening
@@ -32,10 +32,10 @@ impl ModeBehavior for ExploreMode {
                 if let Some(selected) = state.get_selected_file() {
                     if selected.is_directory {
                         // Navigate into directory
-                        if let Err(e) = state.enter_directory() {
-                            eprintln!("Navigation error: {}", e);
+                        match state.enter_directory() {
+                            Ok(_) => ModeResult::none(),
+                            Err(e) => ModeResult::error(format!("Navigation error: {}", e)),
                         }
-                        ModeResult::none()
                     } else {
                         // Open file - this needs App-level handling
                         ModeResult::open_file()
@@ -61,7 +61,7 @@ impl ModeBehavior for ExploreMode {
 }
 
 
-impl ExploreMode {
+impl ExploreHandler {
     pub fn new() -> Self {
         Self {
         }
