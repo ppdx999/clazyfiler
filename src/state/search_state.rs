@@ -15,11 +15,6 @@ impl SearchState {
         }
     }
 
-    /// Update the search query and recalculate filtered results
-    pub fn set_query(&mut self, query: String, total_files: usize) {
-        self.query = query;
-        self.update_filtered_indices(total_files);
-    }
 
     /// Append character to search query
     pub fn append_to_query(&mut self, c: char, total_files: usize) {

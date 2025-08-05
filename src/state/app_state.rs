@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::time::SystemTime;
 use crate::core::Result;
 use crate::services::EditorService;
 use crate::state::{NavigationState, SearchState};
@@ -11,7 +10,6 @@ pub struct FileEntry {
     pub path: PathBuf,
     pub is_directory: bool,
     pub size: Option<u64>,
-    pub modified: Option<SystemTime>,
 }
 
 /// Main application state - now focused and modular
@@ -142,9 +140,6 @@ impl AppState {
         &self.search.query
     }
 
-    pub fn set_search_query(&mut self, query: String) {
-        self.search.set_query(query, self.navigation.files_len());
-    }
 
     pub fn append_search_query(&mut self, c: char) {
         self.search.append_to_query(c, self.navigation.files_len());

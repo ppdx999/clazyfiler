@@ -15,26 +15,6 @@ pub struct TerminalManager {
 }
 
 impl TerminalManager {
-    /// Initialize terminal with proper setup for TUI applications
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        // Enable raw mode for character-by-character input
-        enable_raw_mode()?;
-        
-        // Setup stdout with alternate screen and mouse capture
-        let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-        
-        // Create terminal backend and terminal
-        let backend = CrosstermBackend::new(stdout);
-        let terminal = Terminal::new(backend)?;
-        
-        Ok(TerminalManager { terminal })
-    }
-    
-    /// Get mutable reference to the underlying terminal
-    pub fn terminal(&mut self) -> &mut Terminal<CrosstermBackend<Stdout>> {
-        &mut self.terminal
-    }
     
     /// Clean shutdown of terminal (called automatically on Drop)
     fn cleanup(&mut self) -> Result<(), Box<dyn std::error::Error>> {

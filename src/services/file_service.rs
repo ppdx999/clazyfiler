@@ -31,7 +31,6 @@ impl FileService {
                                 path: entry.path(),
                                 is_directory: metadata.is_dir(),
                                 size: if metadata.is_file() { Some(metadata.len()) } else { None },
-                                modified: metadata.modified().ok(),
                             };
                             files.push(file_entry);
                         }
@@ -163,10 +162,6 @@ impl FileService {
         }
     }
 
-    /// Check if a path exists and is accessible
-    pub fn path_exists(&self, path: &Path) -> bool {
-        path.exists()
-    }
 
     /// Get parent directory of a given path
     pub fn get_parent_dir(&self, path: &Path) -> Option<PathBuf> {

@@ -80,8 +80,4 @@ impl EditorService {
             .unwrap_or(false)
     }
 
-    /// Check if an editor is available
-    pub fn is_editor_available(&self) -> bool {
-        self.detect_editor().is_ok()
-    }
 }
