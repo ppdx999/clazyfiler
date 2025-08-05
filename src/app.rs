@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Terminal};
 use crate::{
-    key::is_ctrl_c, modes::{interface::KeyHandler, Handler}, state::AppState, terminal::TerminalExt
+    handlers::{interface::KeyHandler, Handler}, key::is_ctrl_c, messages::{AppMessage, SwitchAction}, state::AppState, terminal::TerminalExt
 };
     
 pub struct App<B: Backend> {
@@ -19,36 +19,47 @@ impl<B: Backend> App<B> {
         }
     }
 
-    pub fn handle_key(&mut self, key: KeyEvent) -> crate::modes::interface::ModeResult {
+    pub fn handle_key(&mut self, key: KeyEvent) -> Option<AppMessage> {
         // Handle global key event
         if is_ctrl_c(&key) {
-            return crate::modes::interface::ModeResult::quit()
+            return Some(AppMessage::Quit)
         }
 
         // Handle handler specific key event
         return self.handler.handle_key(key, &mut self.state)
     }
 
-    /// Handle the result from key processing
-    fn handle_mode_result(&mut self, result: crate::modes::interface::ModeResult) -> Result<bool, String> {
-        // Handle errors first
-        if let Some(error) = result.error {
-            return Err(error);
-        }
+    /// Handle messages from handlers using clean message dispatching
+    fn handle_message(&mut self, message: AppMessage) -> Result<bool, String> {
         
-        if result.quit {
-            return Ok(true); // Signal to quit
+        match message {
+            AppMessage::Quit => self.handle_quit(),
+            AppMessage::OpenFile => self.handle_open_file(),
+            AppMessage::SwitchMode(action) => self.handle_switch_handler(action),
+            AppMessage::Error(error) => self.handle_error(error),
         }
-        
-        if result.open_file {
-            self.open_file_with_vim()?;
-        }
-        
-        if let Some(switch_action) = result.switch_mode {
-            self.handler.switch_to(switch_action, &mut self.state)?;
-        }
-        
+    }
+    
+    /// Handle quit message
+    fn handle_quit(&mut self) -> Result<bool, String> {
+        Ok(true) // Signal to quit
+    }
+    
+    /// Handle open file message
+    fn handle_open_file(&mut self) -> Result<bool, String> {
+        self.open_file_with_vim()?;
         Ok(false) // Continue running
+    }
+    
+    /// Handle switch handler message
+    fn handle_switch_handler(&mut self, action: SwitchAction) -> Result<bool, String> {
+        self.handler.switch_to(action, &mut self.state)?;
+        Ok(false) // Continue running
+    }
+    
+    /// Handle error message
+    fn handle_error(&mut self, error: String) -> Result<bool, String> {
+        Err(error) // Propagate error to main loop
     }
 
     /// Open the selected file with vim, delegating terminal complexity to terminal layer
@@ -99,17 +110,19 @@ impl<B: Backend> App<B> {
                 continue;
             };
 
-            let result = self.handle_key(key);
+            let message = self.handle_key(key);
             
-            // Handle the result
-            match self.handle_mode_result(result) {
-                Ok(should_quit) => {
-                    if should_quit {
-                        return Ok(());
+            // Handle message if present
+            if let Some(msg) = message {
+                match self.handle_message(msg) {
+                    Ok(should_quit) => {
+                        if should_quit {
+                            return Ok(());
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
                     }
-                },
-                Err(e) => {
-                    eprintln!("Error: {}", e);
                 }
             }
         }

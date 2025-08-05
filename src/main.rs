@@ -1,8 +1,8 @@
-mod actions;
 mod app;
 mod core;
+mod handlers;
 mod key;
-mod modes;
+mod messages;
 mod services;
 mod state;
 mod terminal;

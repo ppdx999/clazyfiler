@@ -2,7 +2,7 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{actions::ModeSwitchAction, modes::{explore::ExploreHandler, interface::{KeyHandler, ModeResult}, search::SearchHandler}, state::AppState};
+use crate::{handlers::{explore::ExploreHandler, interface::KeyHandler, search::SearchHandler}, messages::{AppMessage, SwitchAction}, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
@@ -14,7 +14,7 @@ pub enum Handler {
 
 impl KeyHandler for Handler {
     /// Handle keyboard input - delegates to current handler
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
+    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match self {
             Handler::Explore(explore_handler) => explore_handler.handle_key(key, state),
             Handler::Search(search_handler) => search_handler.handle_key(key, state)
@@ -39,11 +39,11 @@ impl Handler {
     }
     
     /// Switch from current handler to a new handler
-    pub fn switch_to(&mut self, switch_action: ModeSwitchAction, _state: &mut AppState) -> Result<(), String> {
+    pub fn switch_to(&mut self, switch_action: SwitchAction, _state: &mut AppState) -> Result<(), String> {
         // Replace current handler with new handler
         *self = match switch_action {
-            ModeSwitchAction::EnterExploreMode => Self::new_explore_handler(),
-            ModeSwitchAction::EnterSearchMode => Self::new_search_handler(),
+            SwitchAction::EnterExploreMode => Self::new_explore_handler(),
+            SwitchAction::EnterSearchMode => Self::new_search_handler(),
         };
         
         Ok(())

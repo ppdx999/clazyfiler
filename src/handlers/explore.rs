@@ -1,29 +1,29 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{actions::ModeSwitchAction, modes::interface::{KeyHandler, ModeResult}, state::AppState};
+use crate::{handlers::interface::KeyHandler, messages::{AppMessage, SwitchAction}, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreHandler {
 }
 
 impl KeyHandler for ExploreHandler {
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
+    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match key.code {
             // Navigation keys - handle directly
             KeyCode::Char('j') | KeyCode::Down => {
                 state.move_selection_down();
-                ModeResult::none()
+                None
             },
             KeyCode::Char('k') | KeyCode::Up => {
                 state.move_selection_up();
-                ModeResult::none()
+                None
             },
             
             // Directory navigation
             KeyCode::Char('h') | KeyCode::Left | KeyCode::Esc => {
                 match state.go_to_parent() {
-                    Ok(_) => ModeResult::none(),
-                    Err(e) => ModeResult::error(format!("Navigation error: {}", e)),
+                    Ok(_) => None,
+                    Err(e) => Some(AppMessage::Error(format!("Navigation error: {}", e))),
                 }
             },
             
@@ -33,29 +33,29 @@ impl KeyHandler for ExploreHandler {
                     if selected.is_directory {
                         // Navigate into directory
                         match state.enter_directory() {
-                            Ok(_) => ModeResult::none(),
-                            Err(e) => ModeResult::error(format!("Navigation error: {}", e)),
+                            Ok(_) => None,
+                            Err(e) => Some(AppMessage::Error(format!("Navigation error: {}", e))),
                         }
                     } else {
-                        // Open file - this needs App-level handling
-                        ModeResult::open_file()
+                        // Open file - send message to App
+                        Some(AppMessage::OpenFile)
                     }
                 } else {
-                    ModeResult::none()
+                    None
                 }
             },
             
             // Refresh
             KeyCode::Char('r') | KeyCode::F(5) => {
                 state.refresh_files();
-                ModeResult::none()
+                None
             },
             
-            // Global actions
-            KeyCode::Char('/') => ModeResult::switch_mode(ModeSwitchAction::EnterSearchMode),
-            KeyCode::Char('q') => ModeResult::quit(),
+            // Global actions - send messages to App
+            KeyCode::Char('/') => Some(AppMessage::SwitchMode(SwitchAction::EnterSearchMode)),
+            KeyCode::Char('q') => Some(AppMessage::Quit),
             
-            _ => ModeResult::none(),
+            _ => None,
         }
     }
 }

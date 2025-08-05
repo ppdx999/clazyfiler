@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::{modes::Handler, state::AppState};
+use crate::{handlers::Handler, state::AppState};
 
 pub struct UI;
 

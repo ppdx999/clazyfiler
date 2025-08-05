@@ -1,77 +1,77 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{actions::ModeSwitchAction, modes::interface::{KeyHandler, ModeResult}, state::AppState};
+use crate::{handlers::interface::KeyHandler, messages::{AppMessage, SwitchAction}, state::AppState};
 
 #[derive(Debug)]
 pub struct SearchHandler {
 }
 
 impl KeyHandler for SearchHandler {
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> ModeResult {
+    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match (key.code, key.modifiers) {
-            // Exit actions
+            // Exit actions - send messages to App
             (KeyCode::Enter, KeyModifiers::NONE) => {
-                ModeResult::switch_mode(ModeSwitchAction::EnterExploreMode)
+                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
             },
             (KeyCode::Esc, KeyModifiers::NONE) => {
                 state.clear_search_query();
-                ModeResult::switch_mode(ModeSwitchAction::EnterExploreMode)
+                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
             },
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
                 state.clear_search_query();
-                ModeResult::switch_mode(ModeSwitchAction::EnterExploreMode)
+                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
             },
             
-            // Character manipulation
+            // Character manipulation - handle locally
             (KeyCode::Backspace, KeyModifiers::NONE) => {
                 state.pop_search_query();
-                ModeResult::none()
+                None
             },
             (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
                 state.pop_search_query(); // Unix backspace
-                ModeResult::none()
+                None
             },
             (KeyCode::Char(c), KeyModifiers::NONE) => {
                 state.append_search_query(c);
-                ModeResult::none()
+                None
             },
             
-            // Unix terminal shortcuts
+            // Unix terminal shortcuts - handle locally
             (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
                 state.clear_search_query(); // Clear entire line
-                ModeResult::none()
+                None
             },
             (KeyCode::Char('k'), KeyModifiers::CONTROL) => {
                 state.delete_to_end(); // Delete to end
-                ModeResult::none()
+                None
             },
             (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
                 state.delete_word_backward(); // Delete word backward
-                ModeResult::none()
+                None
             },
             (KeyCode::Char('a'), KeyModifiers::CONTROL) => {
                 // For search mode, home/end don't make sense since we're not editing cursor position
                 // For now, just return none - could extend later for "go to first search result"
-                ModeResult::none()
+                None
             },
             (KeyCode::Char('e'), KeyModifiers::CONTROL) => {
                 // Similar to Ctrl+A - could be "go to last search result"  
                 // For now, just return none - could extend later
-                ModeResult::none()
+                None
             },
             
-            // Additional shortcuts
+            // Additional shortcuts - handle locally
             (KeyCode::Char('l'), KeyModifiers::CONTROL) => {
                 state.clear_search_query(); // Clear screen (clear search)
-                ModeResult::none()
+                None
             },
             (KeyCode::Delete, KeyModifiers::NONE) => {
                 state.pop_search_query(); // Alternative delete
-                ModeResult::none()
+                None
             },
             
-            _ => ModeResult::none(),
+            _ => None,
         }
     }
 }
