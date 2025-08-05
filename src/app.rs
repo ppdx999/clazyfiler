@@ -29,23 +29,8 @@ impl<B: Backend> App<B> {
         return self.handler.handle_key(key, &mut self.state)
     }
 
-    /// Handle open file message
-    fn handle_open_file(&mut self) -> Result<(), String> {
-        self.open_file_with_vim()
-    }
-    
-    /// Handle switch handler message
-    fn handle_switch_handler(&mut self, message: &AppMessage) -> Result<(), String> {
-        self.handler.switch_to(message, &mut self.state)
-    }
-    
-    /// Handle error message
-    fn handle_error(&mut self, error: String) -> Result<(), String> {
-        Err(error) // Propagate error to main loop
-    }
-
-    /// Open the selected file with vim, delegating terminal complexity to terminal layer
-    fn open_file_with_vim(&mut self) -> Result<(), String> {
+    /// Open the selected file with editor, delegating terminal complexity to terminal layer
+    fn open_file_with_editor(&mut self) -> Result<(), String> {
         // Get the selected file info before borrowing
         let selected_file = match self.state.get_selected_file() {
             Some(file) => file.clone(), // Clone the FileEntry to avoid borrowing issues
@@ -53,21 +38,21 @@ impl<B: Backend> App<B> {
         };
         
         if selected_file.is_directory {
-            return Err("Cannot open directory with vim".to_string())
+            return Err("Cannot open directory with editor".to_string())
         };
 
         // Use terminal's suspend/resume functionality to handle all terminal complexity
         let result = self.terminal.with_suspended_terminal(|| {
-            self.state.open_file_with_vim(&selected_file).map_err(|e| e.into())
+            self.state.open_file_with_editor(&selected_file).map_err(|e| e.into())
         });
 
         match result {
             Ok(_) => {
-                // Refresh files after returning from vim in case file was modified
+                // Refresh files after returning from editor in case file was modified
                 self.state.refresh_files();
                 Ok(())
             },
-            Err(e) => Err(format!("Failed to open file with vim: {}", e))
+            Err(e) => Err(format!("Failed to open file with editor: {}", e))
         }
     }
 
@@ -98,10 +83,11 @@ impl<B: Backend> App<B> {
             if let Some(msg) = message {
                 match msg {
                     AppMessage::Quit => return Ok(()),
-                    AppMessage::OpenFile => self.handle_open_file()?,
-                    AppMessage::SwitchToExploreHandler | AppMessage::SwitchToSearchHandler =>
-                        self.handle_switch_handler(&msg)?,
-                    AppMessage::Error(error) => self.handle_error(error)?,
+                    AppMessage::OpenFile => self.open_file_with_editor()?,
+                    AppMessage::SwitchToExploreHandler
+                        | AppMessage::SwitchToSearchHandler
+                        => self.handler.switch_to(&msg, &mut self.state)?,
+                    AppMessage::Error(error) => Err(error)?,
                 }
             }
         }
