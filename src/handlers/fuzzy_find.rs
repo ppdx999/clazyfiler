@@ -12,16 +12,6 @@ impl FuzzyFindHandler {
 
     pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match key.code {
-            // Navigation keys within fuzzy find results
-            KeyCode::Char('j') | KeyCode::Down => {
-                state.fuzzy_find.move_selection_down();
-                None
-            },
-            KeyCode::Char('k') | KeyCode::Up => {
-                state.fuzzy_find.move_selection_up();
-                None
-            },
-            
             // Open selected file
             KeyCode::Enter => {
                 if state.fuzzy_find.get_selected_file().is_some() {
