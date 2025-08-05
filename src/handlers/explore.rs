@@ -53,6 +53,7 @@ impl ExploreHandler {
             
             // Global actions - send messages to App
             KeyCode::Char('/') => Some(AppMessage::SwitchToSearchHandler),
+            KeyCode::Char('f') => Some(AppMessage::SwitchToFuzzyFindHandler),
             KeyCode::Char('q') => Some(AppMessage::Quit),
             
             _ => None,

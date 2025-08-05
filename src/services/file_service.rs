@@ -167,4 +167,61 @@ impl FileService {
     pub fn get_parent_dir(&self, path: &Path) -> Option<PathBuf> {
         path.parent().map(|p| p.to_path_buf())
     }
+
+    /// Recursively scan directory tree and return all files
+    /// This is used for fuzzy finding across the entire directory structure
+    pub fn scan_directory_tree(&self, root_path: &Path) -> Result<Vec<FileEntry>> {
+        let mut all_files = Vec::new();
+        self.scan_directory_recursive(root_path, &mut all_files)?;
+        Ok(all_files)
+    }
+
+    /// Recursive helper for directory tree scanning
+    fn scan_directory_recursive(&self, dir_path: &Path, all_files: &mut Vec<FileEntry>) -> Result<()> {
+        let entries = fs::read_dir(dir_path)
+            .map_err(|e| ClazyfilerError::file_system("read_dir", dir_path.to_string_lossy().as_ref(), e))?;
+
+        for entry in entries {
+            match entry {
+                Ok(entry) => {
+                    match entry.metadata() {
+                        Ok(metadata) => {
+                            let file_entry = FileEntry {
+                                name: entry.file_name().to_string_lossy().to_string(),
+                                path: entry.path(),
+                                is_directory: metadata.is_dir(),
+                                size: if metadata.is_file() { Some(metadata.len()) } else { None },
+                            };
+
+                            // Add this entry to our results
+                            all_files.push(file_entry.clone());
+
+                            // If it's a directory, recursively scan it
+                            if metadata.is_dir() {
+                                // Skip hidden directories and common build/cache directories to avoid slowdown
+                                let file_name = entry.file_name();
+                                let dir_name = file_name.to_string_lossy();
+                                if !dir_name.starts_with('.') && 
+                                   !matches!(dir_name.as_ref(), "node_modules" | "target" | ".git" | "build" | "dist") {
+                                    if let Err(e) = self.scan_directory_recursive(&entry.path(), all_files) {
+                                        // Log error but continue scanning other directories
+                                        eprintln!("Warning: Failed to scan directory {}: {}", entry.path().display(), e);
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            // Log warning but continue processing other files
+                            eprintln!("Warning: Failed to read metadata for {}: {}", entry.path().display(), e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    // Log warning but continue processing other files
+                    eprintln!("Warning: Failed to read directory entry: {}", e);
+                }
+            }
+        }
+        Ok(())
+    }
 }

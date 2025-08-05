@@ -5,5 +5,6 @@ pub enum AppMessage {
     OpenFile,
     SwitchToExploreHandler,
     SwitchToSearchHandler,
+    SwitchToFuzzyFindHandler,
     Error(String),
 }

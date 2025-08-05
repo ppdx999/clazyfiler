@@ -67,6 +67,13 @@ impl<B: Backend> App<B> {
                     AppMessage::SwitchToExploreHandler
                         | AppMessage::SwitchToSearchHandler
                         => self.handler.switch_to(&msg, &mut self.state)?,
+                    AppMessage::SwitchToFuzzyFindHandler => {
+                        // Start fuzzy find indexing when switching to fuzzy find mode
+                        if let Err(e) = self.state.start_fuzzy_find() {
+                            return Err(format!("Failed to start fuzzy find: {}", e).into());
+                        }
+                        self.handler.switch_to(&msg, &mut self.state)?;
+                    },
                     AppMessage::Error(error) => Err(error)?,
                 }
             }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use crate::core::Result;
-use crate::services::EditorService;
-use crate::state::{NavigationState, SearchState};
+use crate::services::{EditorService, FileService};
+use crate::state::{NavigationState, SearchState, FuzzyFindState};
 
 /// File entry information
 #[derive(Debug, Clone)]
@@ -17,7 +17,9 @@ pub struct FileEntry {
 pub struct AppState {
     pub navigation: NavigationState,
     pub search: SearchState,
+    pub fuzzy_find: FuzzyFindState,
     editor_service: EditorService,
+    file_service: FileService,
 }
 
 impl AppState {
@@ -25,7 +27,9 @@ impl AppState {
         Self {
             navigation: NavigationState::new(),
             search: SearchState::new(),
+            fuzzy_find: FuzzyFindState::new(),
             editor_service: EditorService::new(),
+            file_service: FileService::new(),
         }
     }
 
@@ -168,10 +172,17 @@ impl AppState {
 
     // Editor service delegation  
     pub fn open_selected_file_with_editor(&mut self) -> Result<()> {
-        // Get the selected file
-        let selected_file = match self.get_selected_file() {
-            Some(file) => file.clone(),
-            None => return Err(crate::core::ClazyfilerError::editor("selection", "No file selected")),
+        // Get the selected file from appropriate state
+        let selected_file = if self.fuzzy_find.is_active() {
+            match self.fuzzy_find.get_selected_file() {
+                Some(file) => file.clone(),
+                None => return Err(crate::core::ClazyfilerError::editor("selection", "No file selected in fuzzy find")),
+            }
+        } else {
+            match self.get_selected_file() {
+                Some(file) => file.clone(),
+                None => return Err(crate::core::ClazyfilerError::editor("selection", "No file selected")),
+            }
         };
         
         // Check if it's a directory
@@ -186,6 +197,25 @@ impl AppState {
         self.refresh_files();
         
         result
+    }
+
+    /// Start fuzzy finding from current directory
+    pub fn start_fuzzy_find(&mut self) -> Result<()> {
+        let root_dir = self.navigation.current_dir.clone();
+        self.fuzzy_find.start_indexing(&root_dir);
+        
+        // Start recursive file indexing in background
+        match self.file_service.scan_directory_tree(&root_dir) {
+            Ok(files) => {
+                self.fuzzy_find.add_files(files);
+                self.fuzzy_find.finish_indexing();
+                Ok(())
+            }
+            Err(e) => {
+                self.fuzzy_find.finish_indexing();
+                Err(e)
+            }
+        }
     }
 
     /// Get file content for display
