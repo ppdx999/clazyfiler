@@ -3,13 +3,7 @@
 pub enum AppMessage {
     Quit,
     OpenFile,
-    SwitchMode(SwitchAction),
+    SwitchToExploreHandler,
+    SwitchToSearchHandler,
     Error(String),
-}
-
-/// Actions for switching between different application modes
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SwitchAction {
-    EnterExploreMode,
-    EnterSearchMode,
 }

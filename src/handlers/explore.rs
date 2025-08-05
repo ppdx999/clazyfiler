@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{handlers::interface::KeyHandler, messages::{AppMessage, SwitchAction}, state::AppState};
+use crate::{handlers::interface::KeyHandler, messages::AppMessage, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreHandler {
@@ -52,7 +52,7 @@ impl KeyHandler for ExploreHandler {
             },
             
             // Global actions - send messages to App
-            KeyCode::Char('/') => Some(AppMessage::SwitchMode(SwitchAction::EnterSearchMode)),
+            KeyCode::Char('/') => Some(AppMessage::SwitchToSearchHandler),
             KeyCode::Char('q') => Some(AppMessage::Quit),
             
             _ => None,

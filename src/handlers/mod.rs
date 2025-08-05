@@ -2,7 +2,7 @@ pub mod interface;
 mod explore;
 mod search;
 
-use crate::{handlers::{explore::ExploreHandler, interface::KeyHandler, search::SearchHandler}, messages::{AppMessage, SwitchAction}, state::AppState};
+use crate::{handlers::{explore::ExploreHandler, interface::KeyHandler, search::SearchHandler}, messages::AppMessage, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
@@ -39,11 +39,12 @@ impl Handler {
     }
     
     /// Switch from current handler to a new handler
-    pub fn switch_to(&mut self, switch_action: SwitchAction, _state: &mut AppState) -> Result<(), String> {
+    pub fn switch_to(&mut self, message: &AppMessage, _state: &mut AppState) -> Result<(), String> {
         // Replace current handler with new handler
-        *self = match switch_action {
-            SwitchAction::EnterExploreMode => Self::new_explore_handler(),
-            SwitchAction::EnterSearchMode => Self::new_search_handler(),
+        *self = match message {
+            AppMessage::SwitchToExploreHandler => Self::new_explore_handler(),
+            AppMessage::SwitchToSearchHandler => Self::new_search_handler(),
+            _ => return Err("Invalid switch message".to_string()),
         };
         
         Ok(())

@@ -1,7 +1,7 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{handlers::interface::KeyHandler, messages::{AppMessage, SwitchAction}, state::AppState};
+use crate::{handlers::interface::KeyHandler, messages::AppMessage, state::AppState};
 
 #[derive(Debug)]
 pub struct SearchHandler {
@@ -12,15 +12,15 @@ impl KeyHandler for SearchHandler {
         match (key.code, key.modifiers) {
             // Exit actions - send messages to App
             (KeyCode::Enter, KeyModifiers::NONE) => {
-                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
+                Some(AppMessage::SwitchToExploreHandler)
             },
             (KeyCode::Esc, KeyModifiers::NONE) => {
                 state.clear_search_query();
-                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
+                Some(AppMessage::SwitchToExploreHandler)
             },
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
                 state.clear_search_query();
-                Some(AppMessage::SwitchMode(SwitchAction::EnterExploreMode))
+                Some(AppMessage::SwitchToExploreHandler)
             },
             
             // Character manipulation - handle locally
