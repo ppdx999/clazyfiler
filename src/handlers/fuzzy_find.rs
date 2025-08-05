@@ -27,6 +27,26 @@ impl FuzzyFindHandler {
                 }
             },
             
+            // Navigation keys within fuzzy find results
+            KeyCode::Char('j') | KeyCode::Down => {
+                state.fuzzy_find.move_selection_down();
+                None
+            },
+            KeyCode::Char('k') | KeyCode::Up => {
+                state.fuzzy_find.move_selection_up();
+                None
+            },
+            
+            // Unix-style navigation with Ctrl+N/Ctrl+P
+            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                state.fuzzy_find.move_selection_down();
+                None
+            },
+            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                state.fuzzy_find.move_selection_up();
+                None
+            },
+            
             // Edit search query
             KeyCode::Char(c) if !key.modifiers.contains(KeyModifiers::CONTROL) => {
                 state.fuzzy_find.append_to_query(c);

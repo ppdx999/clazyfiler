@@ -23,6 +23,26 @@ impl SearchHandler {
                 Some(AppMessage::SwitchToExploreHandler)
             },
             
+            // Navigation keys within search results
+            (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+                state.move_selection_down();
+                None
+            },
+            (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
+                state.move_selection_up();
+                None
+            },
+            
+            // Unix-style navigation with Ctrl+N/Ctrl+P
+            (KeyCode::Char('n'), KeyModifiers::CONTROL) => {
+                state.move_selection_down();
+                None
+            },
+            (KeyCode::Char('p'), KeyModifiers::CONTROL) => {
+                state.move_selection_up();
+                None
+            },
+            
             // Character manipulation - handle locally
             (KeyCode::Backspace, KeyModifiers::NONE) => {
                 state.pop_search_query();
