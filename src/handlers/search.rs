@@ -1,14 +1,14 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{handlers::interface::KeyHandler, messages::AppMessage, state::AppState};
+use crate::{messages::AppMessage, state::AppState};
 
 #[derive(Debug)]
 pub struct SearchHandler {
 }
 
-impl KeyHandler for SearchHandler {
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
+impl SearchHandler {
+    pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match (key.code, key.modifiers) {
             // Exit actions - send messages to App
             (KeyCode::Enter, KeyModifiers::NONE) => {

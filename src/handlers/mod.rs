@@ -1,8 +1,7 @@
-pub mod interface;
 mod explore;
 mod search;
 
-use crate::{handlers::{explore::ExploreHandler, interface::KeyHandler, search::SearchHandler}, messages::AppMessage, state::AppState};
+use crate::{handlers::{explore::ExploreHandler, search::SearchHandler}, messages::AppMessage, state::AppState};
 use crossterm::event::{KeyEvent};
 use ratatui::Frame;
 
@@ -12,17 +11,6 @@ pub enum Handler {
     Search(SearchHandler),
 }
 
-impl KeyHandler for Handler {
-    /// Handle keyboard input - delegates to current handler
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
-        match self {
-            Handler::Explore(explore_handler) => explore_handler.handle_key(key, state),
-            Handler::Search(search_handler) => search_handler.handle_key(key, state)
-        }
-    }
-}
-
-
 impl Handler {
     pub fn new_explore_handler() -> Self {
         Handler::Explore(ExploreHandler::new())
@@ -30,6 +18,14 @@ impl Handler {
     
     pub fn new_search_handler() -> Self {
         Handler::Search(SearchHandler::new())
+    }
+    
+    /// Handle keyboard input - delegates to current handler
+    pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
+        match self {
+            Handler::Explore(explore_handler) => explore_handler.handle_key(key, state),
+            Handler::Search(search_handler) => search_handler.handle_key(key, state)
+        }
     }
     
     /// Render with handler awareness - provides handler context to UI

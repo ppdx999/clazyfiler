@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{prelude::Backend, Terminal};
 use crate::{
-    handlers::{interface::KeyHandler, Handler}, key::is_ctrl_c, messages::AppMessage, state::AppState, terminal::TerminalExt
+    handlers::Handler, key::is_ctrl_c, messages::AppMessage, state::AppState, terminal::TerminalExt
 };
     
 pub struct App<B: Backend> {

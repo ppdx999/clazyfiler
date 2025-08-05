@@ -1,13 +1,13 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{handlers::interface::KeyHandler, messages::AppMessage, state::AppState};
+use crate::{messages::AppMessage, state::AppState};
 
 #[derive(Debug)]
 pub struct ExploreHandler {
 }
 
-impl KeyHandler for ExploreHandler {
-    fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
+impl ExploreHandler {
+    pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match key.code {
             // Navigation keys - handle directly
             KeyCode::Char('j') | KeyCode::Down => {
