@@ -29,31 +29,11 @@ impl<B: Backend> App<B> {
         return self.handler.handle_key(key, &mut self.state)
     }
 
-    /// Open the selected file with editor, delegating terminal complexity to terminal layer
+    /// Open the selected file with editor - delegates to state with terminal suspension
     fn open_file_with_editor(&mut self) -> Result<(), String> {
-        // Get the selected file info before borrowing
-        let selected_file = match self.state.get_selected_file() {
-            Some(file) => file.clone(), // Clone the FileEntry to avoid borrowing issues
-            None => return Err("No file selected".to_string()),
-        };
-        
-        if selected_file.is_directory {
-            return Err("Cannot open directory with editor".to_string())
-        };
-
-        // Use terminal's suspend/resume functionality to handle all terminal complexity
-        let result = self.terminal.with_suspended_terminal(|| {
-            self.state.open_file_with_editor(&selected_file).map_err(|e| e.into())
-        });
-
-        match result {
-            Ok(_) => {
-                // Refresh files after returning from editor in case file was modified
-                self.state.refresh_files();
-                Ok(())
-            },
-            Err(e) => Err(format!("Failed to open file with editor: {}", e))
-        }
+        self.terminal.with_suspended_terminal(|| {
+            self.state.open_selected_file_with_editor().map_err(|e| e.into())
+        }).map_err(|e| e.to_string())
     }
 
 

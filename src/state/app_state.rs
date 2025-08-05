@@ -166,9 +166,26 @@ impl AppState {
         self.update_search_filtering();
     }
 
-    // Editor service delegation
-    pub fn open_file_with_editor(&mut self, file: &FileEntry) -> Result<()> {
-        self.editor_service.open_file(file)
+    // Editor service delegation  
+    pub fn open_selected_file_with_editor(&mut self) -> Result<()> {
+        // Get the selected file
+        let selected_file = match self.get_selected_file() {
+            Some(file) => file.clone(),
+            None => return Err(crate::core::ClazyfilerError::editor("selection", "No file selected")),
+        };
+        
+        // Check if it's a directory
+        if selected_file.is_directory {
+            return Err(crate::core::ClazyfilerError::editor("editor", "Cannot open directory with editor"));
+        }
+        
+        // Open the file with editor
+        let result = self.editor_service.open_file(&selected_file);
+        
+        // Refresh files after editor operation regardless of result
+        self.refresh_files();
+        
+        result
     }
 
     /// Get file content for display
