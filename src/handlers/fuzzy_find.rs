@@ -12,10 +12,16 @@ impl FuzzyFindHandler {
 
     pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
         match key.code {
-            // Open selected file
+            // Open selected file or navigate to directory
             KeyCode::Enter => {
-                if state.fuzzy_find.get_selected_file().is_some() {
-                    Some(AppMessage::OpenFile)
+                if let Some(selected_file) = state.fuzzy_find.get_selected_file() {
+                    if selected_file.is_directory {
+                        // Navigate to directory and switch back to explore mode
+                        Some(AppMessage::NavigateToDirectory(selected_file.path.clone()))
+                    } else {
+                        // Open file with editor
+                        Some(AppMessage::OpenFile)
+                    }
                 } else {
                     None
                 }

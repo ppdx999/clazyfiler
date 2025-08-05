@@ -74,6 +74,13 @@ impl<B: Backend> App<B> {
                         }
                         self.handler.switch_to(&msg, &mut self.state)?;
                     },
+                    AppMessage::NavigateToDirectory(path) => {
+                        // Navigate to directory and switch back to explore mode
+                        if let Err(e) = self.state.navigate_to_directory(path) {
+                            return Err(format!("Failed to navigate to directory: {}", e).into());
+                        }
+                        self.handler.switch_to(&AppMessage::SwitchToExploreHandler, &mut self.state)?;
+                    },
                     AppMessage::Error(error) => Err(error)?,
                 }
             }

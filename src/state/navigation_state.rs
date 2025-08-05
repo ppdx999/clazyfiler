@@ -81,6 +81,21 @@ impl NavigationState {
         Ok(())
     }
 
+    /// Change to a specific directory (used from fuzzy find)
+    pub fn change_directory(&mut self, new_dir: PathBuf) -> Result<()> {
+        if !new_dir.is_dir() {
+            return Err(ClazyfilerError::navigation(
+                new_dir.to_string_lossy().as_ref(),
+                "Path is not a directory"
+            ));
+        }
+
+        self.current_dir = new_dir;
+        self.selected_index = 0;
+        self.refresh_files()?;
+        Ok(())
+    }
+
     /// Move selection up
     pub fn move_selection_up(&mut self) {
         if self.selected_index > 0 {

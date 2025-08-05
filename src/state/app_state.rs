@@ -199,6 +199,11 @@ impl AppState {
         result
     }
 
+    /// Navigate to a specific directory (used from fuzzy find)
+    pub fn navigate_to_directory(&mut self, path: std::path::PathBuf) -> Result<()> {
+        self.navigation.change_directory(path)
+    }
+
     /// Start fuzzy finding from current directory
     pub fn start_fuzzy_find(&mut self) -> Result<()> {
         let root_dir = self.navigation.current_dir.clone();
