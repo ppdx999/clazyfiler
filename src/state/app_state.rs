@@ -172,7 +172,7 @@ impl AppState {
     }
 
     // Editor service delegation
-    pub fn open_file_with_vim(&mut self, file: &FileEntry) -> Result<()> {
+    pub fn open_file_with_editor(&mut self, file: &FileEntry) -> Result<()> {
         self.editor_service.open_file(file)
     }
 
