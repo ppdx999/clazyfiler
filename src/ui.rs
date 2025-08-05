@@ -101,7 +101,7 @@ impl UI {
                 Handler::Explore(_) => "Press '/' to search..."
             }
         } else {
-state.search_query()
+            state.search_query()
         };
 
         let paragraph = Paragraph::new(search_text)
