@@ -28,11 +28,11 @@ impl FuzzyFindHandler {
             },
             
             // Navigation keys within fuzzy find results
-            (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+            (KeyCode::Down, KeyModifiers::NONE) => {
                 state.fuzzy_find.move_selection_down();
                 None
             },
-            (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
+            (KeyCode::Up, KeyModifiers::NONE) => {
                 state.fuzzy_find.move_selection_up();
                 None
             },

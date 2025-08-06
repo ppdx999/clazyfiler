@@ -24,11 +24,11 @@ impl SearchHandler {
             },
             
             // Navigation keys within search results
-            (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+            (KeyCode::Down, KeyModifiers::NONE) => {
                 state.move_selection_down();
                 None
             },
-            (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
+            (KeyCode::Up, KeyModifiers::NONE) => {
                 state.move_selection_up();
                 None
             },
