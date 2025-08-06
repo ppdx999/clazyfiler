@@ -203,4 +203,13 @@ impl FuzzyFindState {
     pub fn is_active(&self) -> bool {
         !self.query.is_empty() || !self.all_files.is_empty()
     }
+
+    /// Clear all fuzzy find state (used when changing directories)
+    pub fn clear(&mut self) {
+        self.query.clear();
+        self.all_files.clear();
+        self.filtered_indices.clear();
+        self.selected_index = 0;
+        self.is_indexing = false;
+    }
 }

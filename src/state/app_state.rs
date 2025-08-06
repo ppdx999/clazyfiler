@@ -201,7 +201,14 @@ impl AppState {
 
     /// Navigate to a specific directory (used from fuzzy find)
     pub fn navigate_to_directory(&mut self, path: std::path::PathBuf) -> Result<()> {
+        // Clear fuzzy find state when navigating to a new directory
+        self.fuzzy_find.clear();
         self.navigation.change_directory(path)
+    }
+
+    /// Clear fuzzy find state (used when exiting fuzzy find mode)
+    pub fn clear_fuzzy_find_state(&mut self) {
+        self.fuzzy_find.clear();
     }
 
     /// Start fuzzy finding from current directory

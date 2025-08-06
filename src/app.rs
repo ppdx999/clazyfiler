@@ -66,7 +66,11 @@ impl<B: Backend> App<B> {
                     AppMessage::OpenFile => self.open_file_with_editor()?,
                     AppMessage::SwitchToExploreHandler
                         | AppMessage::SwitchToSearchHandler
-                        => self.handler.switch_to(&msg, &mut self.state)?,
+                        => {
+                            // Clear fuzzy find state when switching away from fuzzy find mode
+                            self.state.clear_fuzzy_find_state();
+                            self.handler.switch_to(&msg, &mut self.state)?;
+                        },
                     AppMessage::SwitchToFuzzyFindHandler => {
                         // Start fuzzy find indexing when switching to fuzzy find mode
                         if let Err(e) = self.state.start_fuzzy_find() {
