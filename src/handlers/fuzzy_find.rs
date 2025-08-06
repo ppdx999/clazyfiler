@@ -14,7 +14,7 @@ impl FuzzyFindHandler {
         match (key.code, key.modifiers) {
             // Open selected file or navigate to directory
             (KeyCode::Enter, KeyModifiers::NONE) => {
-                if let Some(selected_file) = state.fuzzy_find.get_selected_file() {
+                if let Some(selected_file) = state.get_selected_file() {
                     if selected_file.is_directory {
                         // Navigate to directory and switch back to explore mode
                         Some(AppMessage::NavigateToDirectory(selected_file.path.clone()))
@@ -29,21 +29,21 @@ impl FuzzyFindHandler {
             
             // Navigation keys within fuzzy find results
             (KeyCode::Down, KeyModifiers::NONE) => {
-                state.fuzzy_find.move_selection_down();
+                state.move_selection_down();
                 None
             },
             (KeyCode::Up, KeyModifiers::NONE) => {
-                state.fuzzy_find.move_selection_up();
+                state.move_selection_up();
                 None
             },
             
             // Unix-style navigation with Ctrl+N/Ctrl+P
             (KeyCode::Char('n'), KeyModifiers::CONTROL) => {
-                state.fuzzy_find.move_selection_down();
+                state.move_selection_down();
                 None
             },
             (KeyCode::Char('p'), KeyModifiers::CONTROL) => {
-                state.fuzzy_find.move_selection_up();
+                state.move_selection_up();
                 None
             },
             
@@ -53,21 +53,25 @@ impl FuzzyFindHandler {
             
             // Character manipulation
             (KeyCode::Backspace, KeyModifiers::NONE) => {
-                state.fuzzy_find.pop_from_query();
+                state.pop_search_query();
+                state.update_fuzzy_find_view();
                 None
             },
             (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
-                state.fuzzy_find.delete_word_backward();
+                state.delete_word_backward();
+                state.update_fuzzy_find_view();
                 None
             },
             (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
-                state.fuzzy_find.delete_to_end();
+                state.delete_to_end();
+                state.update_fuzzy_find_view();
                 None
             },
             
             // Edit search query - regular characters without control modifiers
             (KeyCode::Char(c), KeyModifiers::NONE) => {
-                state.fuzzy_find.append_to_query(c);
+                state.append_search_query(c);
+                state.update_fuzzy_find_view();
                 None
             },
             

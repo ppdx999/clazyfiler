@@ -46,28 +46,34 @@ impl SearchHandler {
             // Character manipulation - handle locally
             (KeyCode::Backspace, KeyModifiers::NONE) => {
                 state.pop_search_query();
+                state.update_search_view();
                 None
             },
             (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
-                state.pop_search_query(); // Unix backspace
+                state.pop_search_query();
+                state.update_search_view();
                 None
             },
             (KeyCode::Char(c), KeyModifiers::NONE) => {
                 state.append_search_query(c);
+                state.update_search_view();
                 None
             },
             
             // Unix terminal shortcuts - handle locally
             (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
-                state.clear_search_query(); // Clear entire line
+                state.clear_search_query();
+                state.update_search_view();
                 None
             },
             (KeyCode::Char('k'), KeyModifiers::CONTROL) => {
-                state.delete_to_end(); // Delete to end
+                state.delete_to_end();
+                state.update_search_view();
                 None
             },
             (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
-                state.delete_word_backward(); // Delete word backward
+                state.delete_word_backward();
+                state.update_search_view();
                 None
             },
             (KeyCode::Char('a'), KeyModifiers::CONTROL) => {
@@ -83,11 +89,13 @@ impl SearchHandler {
             
             // Additional shortcuts - handle locally
             (KeyCode::Char('l'), KeyModifiers::CONTROL) => {
-                state.clear_search_query(); // Clear screen (clear search)
+                state.clear_search_query();
+                state.update_search_view();
                 None
             },
             (KeyCode::Delete, KeyModifiers::NONE) => {
-                state.pop_search_query(); // Alternative delete
+                state.pop_search_query();
+                state.update_search_view();
                 None
             },
             
