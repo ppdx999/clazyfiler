@@ -3,7 +3,6 @@
 pub enum AppMessage {
     Quit,
     OpenFile,
-    NavigateToDirectory(std::path::PathBuf),
     SwitchToExploreHandler,
     SwitchToSearchHandler,
     SwitchToFuzzyFindHandler,

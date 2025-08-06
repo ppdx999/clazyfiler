@@ -16,8 +16,13 @@ impl FuzzyFindHandler {
             (KeyCode::Enter, KeyModifiers::NONE) => {
                 if let Some(selected_file) = state.get_selected_file() {
                     if selected_file.is_directory {
-                        // Navigate to directory and switch back to explore mode
-                        Some(AppMessage::NavigateToDirectory(selected_file.path.clone()))
+                        // Navigate to directory directly, then switch back to explore mode
+                        let path = selected_file.path.clone();
+                        if let Err(e) = state.change_directory(path) {
+                            Some(AppMessage::Error(format!("Failed to navigate to directory: {}", e)))
+                        } else {
+                            Some(AppMessage::SwitchToExploreHandler)
+                        }
                     } else {
                         // Open file with editor
                         Some(AppMessage::OpenFile)
