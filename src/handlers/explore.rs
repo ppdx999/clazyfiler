@@ -1,27 +1,27 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{messages::AppMessage, state::AppState};
+use crate::{messages::AppMessage, model::AppModel};
 
 #[derive(Debug)]
 pub struct ExploreHandler {
 }
 
 impl ExploreHandler {
-    pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
+    pub fn handle_key(&mut self, key: KeyEvent, model: &mut AppModel) -> Option<AppMessage> {
         match key.code {
             // Navigation keys - handle directly
             KeyCode::Char('j') | KeyCode::Down => {
-                state.move_selection_down();
+                model.move_selection_down();
                 None
             },
             KeyCode::Char('k') | KeyCode::Up => {
-                state.move_selection_up();
+                model.move_selection_up();
                 None
             },
             
             // Directory navigation
             KeyCode::Char('h') | KeyCode::Left | KeyCode::Esc => {
-                match state.go_to_parent() {
+                match model.go_to_parent() {
                     Ok(_) => None,
                     Err(e) => Some(AppMessage::Error(format!("Navigation error: {}", e))),
                 }
@@ -29,10 +29,10 @@ impl ExploreHandler {
             
             // Smart selection: directory navigation or file opening
             KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter => {
-                if let Some(selected) = state.get_selected_file() {
+                if let Some(selected) = model.get_selected_file() {
                     if selected.is_directory {
                         // Navigate into directory
-                        match state.enter_directory() {
+                        match model.enter_selected_directory() {
                             Ok(_) => None,
                             Err(e) => Some(AppMessage::Error(format!("Navigation error: {}", e))),
                         }
@@ -47,7 +47,7 @@ impl ExploreHandler {
             
             // Refresh
             KeyCode::Char('r') | KeyCode::F(5) => {
-                state.refresh_files();
+                model.refresh_current_directory();
                 None
             },
             

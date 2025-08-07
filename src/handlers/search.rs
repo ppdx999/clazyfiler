@@ -1,79 +1,73 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{messages::AppMessage, state::AppState};
+use crate::{messages::AppMessage, model::AppModel};
 
 #[derive(Debug)]
 pub struct SearchHandler {
 }
 
 impl SearchHandler {
-    pub fn handle_key(&mut self, key: KeyEvent, state: &mut AppState) -> Option<AppMessage> {
+    pub fn handle_key(&mut self, key: KeyEvent, model: &mut AppModel) -> Option<AppMessage> {
         match (key.code, key.modifiers) {
             // Exit actions - send messages to App
             (KeyCode::Enter, KeyModifiers::NONE) => {
-                Some(AppMessage::SwitchToExploreHandler)
+                Some(AppMessage::SwitchToExploreHandlerKeepQuery)  // Keep search results
             },
             (KeyCode::Esc, KeyModifiers::NONE) => {
-                state.clear_search_query();
+                model.clear_query();
                 Some(AppMessage::SwitchToExploreHandler)
             },
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
-                state.clear_search_query();
+                model.clear_query();
                 Some(AppMessage::SwitchToExploreHandler)
             },
             
             // Navigation keys within search results
             (KeyCode::Down, KeyModifiers::NONE) => {
-                state.move_selection_down();
+                model.move_selection_down();
                 None
             },
             (KeyCode::Up, KeyModifiers::NONE) => {
-                state.move_selection_up();
+                model.move_selection_up();
                 None
             },
             
             // Unix-style navigation with Ctrl+N/Ctrl+P
             (KeyCode::Char('n'), KeyModifiers::CONTROL) => {
-                state.move_selection_down();
+                model.move_selection_down();
                 None
             },
             (KeyCode::Char('p'), KeyModifiers::CONTROL) => {
-                state.move_selection_up();
+                model.move_selection_up();
                 None
             },
             
             // Character manipulation - handle locally
             (KeyCode::Backspace, KeyModifiers::NONE) => {
-                state.pop_search_query();
-                state.update_search_view();
+                model.pop_from_query();
                 None
             },
             (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
-                state.pop_search_query();
-                state.update_search_view();
+                model.pop_from_query();
                 None
             },
             (KeyCode::Char(c), KeyModifiers::NONE) => {
-                state.append_search_query(c);
-                state.update_search_view();
+                model.append_to_query(c);
                 None
             },
             
             // Unix terminal shortcuts - handle locally
             (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
-                state.clear_search_query();
-                state.update_search_view();
+                model.clear_query();
                 None
             },
             (KeyCode::Char('k'), KeyModifiers::CONTROL) => {
-                state.delete_to_end();
-                state.update_search_view();
+                model.delete_to_end();
                 None
             },
             (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
-                state.delete_word_backward();
-                state.update_search_view();
+                model.delete_word_backward();
                 None
             },
             (KeyCode::Char('a'), KeyModifiers::CONTROL) => {
@@ -89,13 +83,11 @@ impl SearchHandler {
             
             // Additional shortcuts - handle locally
             (KeyCode::Char('l'), KeyModifiers::CONTROL) => {
-                state.clear_search_query();
-                state.update_search_view();
+                model.clear_query();
                 None
             },
             (KeyCode::Delete, KeyModifiers::NONE) => {
-                state.pop_search_query();
-                state.update_search_view();
+                model.pop_from_query();
                 None
             },
             

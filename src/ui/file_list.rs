@@ -4,19 +4,37 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
     Frame,
 };
-use crate::{handlers::Handler, state::FileListViewState};
+use crate::{handlers::Handler, model::{AppModel, AppMode}};
 
-/// Renders the file list component on the left side
+/// Renders the file list component on the left side  
 pub fn render_file_list(
     frame: &mut Frame,
     area: Rect,
-    file_list_view: &FileListViewState,
-    current_dir: &std::path::Path,
+    model: &AppModel,
     handler: &Handler,
 ) {
-    let title = &file_list_view.title;
+    // Generate title directly from model
+    let title = match model.mode {
+        AppMode::Explore => {
+            if model.query_text.is_empty() {
+                format!("Files - {}", model.current_dir.display())
+            } else {
+                format!("Search - {}", model.current_dir.display())
+            }
+        }
+        AppMode::Search => {
+            format!("Search - {}", model.current_dir.display())
+        }
+        AppMode::FuzzyFind => {
+            if model.is_indexing {
+                format!("🔍 Fuzzy Find - Indexing... ({} files)", model.all_files_cache.len())
+            } else {
+                format!("🔍 Fuzzy Find - {} total files", model.all_files_cache.len())
+            }
+        }
+    };
 
-    let items: Vec<ListItem> = file_list_view
+    let items: Vec<ListItem> = model
         .files
         .iter()
         .map(|file| {
@@ -25,11 +43,10 @@ pub fn render_file_list(
             // Show relative path for fuzzy find, just name for others
             let display_name = match handler {
                 Handler::FuzzyFind(_) => {
-                    if let Ok(relative) = file.path.strip_prefix(current_dir) {
-                        relative.to_string_lossy().to_string()
-                    } else {
-                        file.path.to_string_lossy().to_string()
-                    }
+                    // For fuzzy find, show relative path from root
+                    file.path.file_name()
+                        .map(|name| name.to_string_lossy().to_string())
+                        .unwrap_or_else(|| file.name.clone())
                 }
                 _ => file.name.clone(),
             };
@@ -39,7 +56,7 @@ pub fn render_file_list(
         .collect();
 
     let block = Block::default()
-        .title(title.clone())
+        .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::White));
 
@@ -50,12 +67,12 @@ pub fn render_file_list(
     );
 
     // Always show highlight symbol if we have files
-    if file_list_view.has_files() {
+    if !model.files.is_empty() {
         list = list.highlight_symbol("> ");
     }
 
-    let selected_index = if file_list_view.has_files() {
-        Some(file_list_view.selected_index)
+    let selected_index = if !model.files.is_empty() {
+        Some(model.selected_index)
     } else {
         None
     };

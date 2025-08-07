@@ -3,8 +3,8 @@ mod core;
 mod handlers;
 mod key;
 mod messages;
+mod model;
 mod services;
-mod state;
 mod terminal;
 mod ui;
 

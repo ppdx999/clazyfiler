@@ -4,6 +4,7 @@ pub enum AppMessage {
     Quit,
     OpenFile,
     SwitchToExploreHandler,
+    SwitchToExploreHandlerKeepQuery,  // Keep search results when switching to explore mode
     SwitchToSearchHandler,
     SwitchToFuzzyFindHandler,
     Error(String),

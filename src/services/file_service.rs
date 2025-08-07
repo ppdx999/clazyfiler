@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::io::Read;
 use crate::core::{ClazyfilerError, Result};
-use crate::state::FileEntry;
+use crate::model::FileEntry;
 
 /// Service responsible for all file system operations
 /// Extracted from AppState to separate concerns and improve testability

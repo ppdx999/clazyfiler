@@ -4,13 +4,13 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::{handlers::Handler, state::SearchInputViewState};
+use crate::{handlers::Handler, model::AppModel};
 
 /// Renders the search bar component at the bottom
 pub fn render_search_bar(
     frame: &mut Frame,
     area: Rect,
-    search_input_view: &SearchInputViewState,
+    model: &AppModel,
     handler: &Handler,
 ) {
     let (title, border_color, text_color, search_text) = match handler {
@@ -18,20 +18,20 @@ pub fn render_search_bar(
             "🔍 Search Mode (Active)",
             Color::Green,
             Color::White,
-            if search_input_view.query.is_empty() {
+            if model.query_text.is_empty() {
                 "Type to search..."
             } else {
-                &search_input_view.query
+                &model.query_text
             },
         ),
         Handler::FuzzyFind(_) => (
             "🔍 Fuzzy Find Mode (Active) - ESC to exit",
             Color::Cyan,
             Color::White,
-            if search_input_view.query.is_empty() {
+            if model.query_text.is_empty() {
                 "Type to fuzzy search files..."
             } else {
-                &search_input_view.query
+                &model.query_text
             },
         ),
         Handler::Explore(_) => (

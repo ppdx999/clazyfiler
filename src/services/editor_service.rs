@@ -1,6 +1,6 @@
 use std::process::Command;
 use crate::core::{ClazyfilerError, Result};
-use crate::state::FileEntry;
+use crate::model::FileEntry;
 
 /// Service responsible for external editor integration
 /// Handles $EDITOR, vim, or vi launching and editor detection
